@@ -1,0 +1,22 @@
+
+> astro-naveo-temp@0.0.1 build
+> astro build
+
+[2m13:08:35[22m [34m[content][39m Syncing content
+[2m13:08:35[22m [34m[content][39m Synced content
+[2m13:08:35[22m [34m[types][39m Generated [2m899ms[22m
+[2m13:08:35[22m [34m[build][39m output: [34m"static"[39m
+[2m13:08:35[22m [34m[build][39m mode: [34m"static"[39m
+[2m13:08:35[22m [34m[build][39m directory: [34mC:\Users\mateu\OneDrive\Documentos\Meus Projetos Naveo\Central de Gestão Naveo\dist\[39m
+[2m13:08:35[22m [34m[build][39m Collecting build info...
+[2m13:08:35[22m [34m[build][39m [32m✓ Completed in 973ms.[39m
+[2m13:08:35[22m [34m[build][39m Building static entrypoints...
+[31m[1m13:08:36[22m [ERROR] [vite][39m [31m✗[39m Build failed in 1.11s
+[@tailwindcss/vite:generate:build] Cannot apply unknown utility class `border-border`. Are you using CSS modules or similar and missing `@reference`? https://tailwindcss.com/docs/functions-and-directives#reference-directive
+file: C:/Users/mateu/OneDrive/Documentos/Meus Projetos Naveo/Central de Gestão Naveo/src/styles/global.css
+  [1mStack trace:[22m
+[2m    at onInvalidCandidate (file:///C:/Users/mateu/OneDrive/Documentos/Meus%20Projetos%20Naveo/Central%20de%20Gest%C3%A3o%20Naveo/node_modules/tailwindcss/dist/chunk-O3SHLFNR.mjs:21:1314)
+    at file:///C:/Users/mateu/OneDrive/Documentos/Meus%20Projetos%20Naveo/Central%20de%20Gest%C3%A3o%20Naveo/node_modules/tailwindcss/dist/chunk-O3SHLFNR.mjs:21:355
+    at I (file:///C:/Users/mateu/OneDrive/Documentos/Meus%20Projetos%20Naveo/Central%20de%20Gest%C3%A3o%20Naveo/node_modules/tailwindcss/dist/chunk-O3SHLFNR.mjs:3:1377)
+    at Gi (file:///C:/Users/mateu/OneDrive/Documentos/Meus%20Projetos%20Naveo/Central%20de%20Gest%C3%A3o%20Naveo/node_modules/tailwindcss/dist/chunk-O3SHLFNR.mjs:38:294)
+    at async vf (file:///C:/Users/mateu/OneDrive/Documentos/Meus%20Projetos%20Naveo/Central%20de%20Gest%C3%A3o%20Naveo/node_modules/tailwindcss/dist/chunk-O3SHLFNR.mjs:38:1406)[22m

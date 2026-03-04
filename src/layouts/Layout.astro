@@ -1,0 +1,35 @@
+---
+import { ThemeProvider } from "../components/ThemeProvider";
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="pt-BR" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="Netuno - Gestão de Projetos e CRM" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title} | Netuno</title>
+  </head>
+  <body
+    class="min-h-screen bg-background text-foreground font-sans antialiased overflow-hidden"
+  >
+    <!-- Injetando Provider dentro da estrutura base no cliente via React para o modo -->
+    <div id="root" class="w-full h-full flex flex-col">
+      <slot />
+    </div>
+    <script>
+      // Avoid flash of unstyled content
+      const theme = localStorage.getItem("naveo-ui-theme") || "dark";
+      if (theme === "light") document.documentElement.classList.remove("dark");
+    </script>
+  </body>
+</html>
