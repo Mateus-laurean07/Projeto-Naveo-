@@ -10,30 +10,54 @@ import {
   Clock,
   ArrowRight,
 } from "lucide-react";
+import { supabase } from "../lib/supabase";
 
 export function Subscriptions({
+  profile: activeProfile,
   setActiveTab,
 }: {
+  profile?: any;
   setActiveTab?: (tab: string) => void;
 }) {
-  const currentSub = {
-    planName: "Trial Gratuito",
-    status: "Ativo",
-    price: "R$ 997,90/mês",
-    originalPrice: "R$ 1.397,90",
-    billingCycle: "Mensal",
-    nextBillingDate: "19 de março de 2026",
-    daysLeft: "4 dias",
-    expirationDate: "27 de fevereiro de 2026",
-    startDate: "19 de fevereiro de 2026",
-    paymentMethod: "Cartão de crédito final 4242",
-    memberSince: "15/01/2025",
-    isTrial: false,
-  };
+  const [subscription, setSubscription] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const hasSubscription = false;
+  useEffect(() => {
+    async function loadSubscription() {
+      try {
+        const ownerId = activeProfile?.admin_id || activeProfile?.id;
+        if (!ownerId) {
+          setLoading(false);
+          return;
+        }
 
-  if (!hasSubscription) {
+        const { data, error } = await supabase
+          .from("subscriptions")
+          .select("*, plans(*)")
+          .eq("user_id", ownerId)
+          .maybeSingle();
+
+        if (error) throw error;
+        setSubscription(data);
+      } catch (e) {
+        console.error("Erro ao carregar assinatura:", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadSubscription();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-20">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!subscription) {
     return (
       <div className="space-y-6 max-w-4xl animate-in fade-in zoom-in-95 duration-200 pb-12">
         <div className="flex items-center gap-6 mb-10 bg-card/40 backdrop-blur-md p-6 rounded-[2.5rem] border border-border/40 shadow-xl">
@@ -42,7 +66,7 @@ export function Subscriptions({
           </div>
           <div>
             <h1 className="text-3xl font-black tracking-tight text-foreground">
-              Minha Assisnatura
+              Minha Assinatura
             </h1>
             <p className="text-sm font-medium text-muted-foreground/80">
               Gerencie seu plano e detalhes de faturamento
@@ -76,4 +100,77 @@ export function Subscriptions({
       </div>
     );
   }
+
+  return (
+    <div className="space-y-6 max-w-4xl animate-in fade-in zoom-in-95 duration-200 pb-12">
+      <div className="flex items-center gap-6 mb-10 bg-card/40 backdrop-blur-md p-6 rounded-[2.5rem] border border-border/40 shadow-xl">
+        <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-white shrink-0 shadow-lg shadow-primary/20">
+          <CheckCircle2 className="w-8 h-8" />
+        </div>
+        <div>
+          <h1 className="text-3xl font-black tracking-tight text-foreground uppercase">
+            Plano {subscription.plans?.name || "Ativo"}
+          </h1>
+          <p className="text-sm font-medium text-muted-foreground/80">
+            Status:{" "}
+            <span className="text-emerald-500 font-bold">
+              {subscription.status}
+            </span>
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-card/50 backdrop-blur-xl border border-border/50 rounded-3xl p-8 shadow-sm">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center text-accent">
+              <CalendarDays className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                Renovação
+              </p>
+              <p className="text-xl font-black text-foreground">
+                {subscription.renewal_date
+                  ? new Date(subscription.renewal_date).toLocaleDateString(
+                      "pt-BR",
+                    )
+                  : "---"}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+              <CreditCard className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                Valor Mensal
+              </p>
+              <p className="text-xl font-black text-foreground">
+                R$ {subscription.plans?.price || "---"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-card/50 backdrop-blur-xl border border-border/50 rounded-3xl p-8 shadow-sm flex flex-col justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-foreground mb-2">
+              Precisa de mais recursos?
+            </h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              Você pode migrar seu plano a qualquer momento.
+            </p>
+          </div>
+          <button
+            onClick={() => setActiveTab && setActiveTab("planos")}
+            className="w-full py-4 rounded-2xl bg-foreground/5 hover:bg-foreground/10 text-foreground font-black text-xs uppercase tracking-widest transition-all"
+          >
+            Alterar Meu Plano
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }

@@ -10,6 +10,8 @@ import {
   MessageSquare,
   LogOut,
   ChevronDown,
+  Mail,
+  FolderKanban,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { supabase } from "../lib/supabase";
@@ -18,9 +20,9 @@ export function Header({ session, profile }: { session?: any; profile?: any }) {
   const { theme, setTheme } = useTheme();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [notifications, setNotifications] = useState([
+  const [notifications, setNotifications] = useState<any[]>([
     {
-      id: 1,
+      id: "1",
       type: "lead",
       title: "Novo lead recebido",
       message: "Marcos Silva entrou em contato pela LP",
@@ -28,7 +30,7 @@ export function Header({ session, profile }: { session?: any; profile?: any }) {
       read: false,
     },
     {
-      id: 2,
+      id: "2",
       type: "system",
       title: "Atualização do sistema",
       message: "Novos recursos disponíveis na plataforma",
@@ -67,15 +69,119 @@ export function Header({ session, profile }: { session?: any; profile?: any }) {
     }
   };
 
-  const [userEmail, setUserEmail] = useState("");
-
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data?.user?.email) setUserEmail(data.user.email);
-    });
-  }, []);
+    if (!profile?.email) return;
 
-  const userName = profile?.full_name || userEmail.split("@")[0] || "Usuário";
+    let mounted = true;
+
+    const fetchInvitations = async (email: string) => {
+      try {
+        const { data, error } = await supabase
+          .from("invitations")
+          .select("*")
+          .eq("status", "pending")
+          .eq("email", email);
+
+        if (!error && data && data.length > 0 && mounted) {
+          setNotifications((prev) => {
+            const newInvites = data
+              .filter((inv) => !prev.some((p) => p.id === `inv-${inv.id}`))
+              .map((inv: any) => ({
+                id: `inv-${inv.id}`,
+                type: "invite",
+                title: "Convite para Equipe",
+                message: `Você foi convidado para participar como ${inv.role}. Acesse "Equipes" para aceitar.`,
+                time: "Novo",
+                read: false,
+              }));
+            // Mescla de forma inteligente
+            const others = prev.filter((p) => p.type !== "invite");
+            return [...newInvites, ...others];
+          });
+        }
+      } catch (e) {}
+    };
+
+    const fetchSysNotifications = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("sys_notifications")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(20);
+
+        if (!error && data && mounted) {
+          setNotifications((prev) => {
+            const invites = prev.filter((p) => p.type === "invite");
+            const sysData = data.map((n: any) => ({
+              id: n.id,
+              type: n.type || "system",
+              title: n.title,
+              message: n.message,
+              time: n.created_at
+                ? new Date(n.created_at).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : "Agora",
+              read: n.read || false,
+            }));
+
+            // Combina com os invites, tirando dados fake antigos
+            return [...invites, ...sysData];
+          });
+        }
+      } catch (e) {}
+    };
+
+    fetchInvitations(profile.email);
+    fetchSysNotifications();
+
+    const channel = supabase
+      .channel("notifications-sync")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "sys_notifications" },
+        (payload) => {
+          if (!mounted) return;
+          const newN = payload.new;
+          setNotifications((prev) => [
+            {
+              id: newN.id,
+              type: newN.type || "system",
+              title: newN.title,
+              message: newN.message,
+              time: "Agora mesmo",
+              read: false,
+            },
+            ...prev,
+          ]);
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "invitations",
+          filter: `email=eq.${profile.email}`,
+        },
+        () => {
+          if (!mounted) return;
+          fetchInvitations(profile.email);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      mounted = false;
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.email]);
+
+  const userName =
+    profile?.full_name || profile?.email?.split("@")[0] || "Usuário";
+  const userEmail = profile?.email || "";
   const userInitials = (profile?.full_name || userEmail || "U")
     .split(/[ .@]/)
     .filter(Boolean)
@@ -145,6 +251,12 @@ export function Header({ session, profile }: { session?: any; profile?: any }) {
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:scale-110 group-hover:bg-primary/20 transition-all border border-primary/10">
                       {notif.type === "lead" ? (
                         <User size={18} />
+                      ) : notif.type === "invite" ? (
+                        <Mail size={18} />
+                      ) : notif.type === "project" ? (
+                        <FolderKanban size={18} />
+                      ) : notif.type === "comment" ? (
+                        <MessageSquare size={18} />
                       ) : (
                         <CheckCircle2 size={18} />
                       )}

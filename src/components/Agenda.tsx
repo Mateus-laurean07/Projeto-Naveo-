@@ -14,17 +14,16 @@ import {
 import { cn } from "../lib/utils";
 import { supabase } from "../lib/supabase";
 
-// Feriados Nacionais (Dinâmico para o ano atual e seguintes)
+// Feriados Nacionais Fixos
 const getHolidays = (year: number) => ({
   [`${year}-01-01`]: "Confraternização Universal",
-  [`${year}-02-17`]: "Carnaval (Exemplo)", // Datas móveis simplificadas
-  [`${year}-04-03`]: "Sexta-feira Santa (Exemplo)",
   [`${year}-04-21`]: "Tiradentes",
   [`${year}-05-01`]: "Dia do Trabalhador",
   [`${year}-09-07`]: "Independência do Brasil",
   [`${year}-10-12`]: "Nossa Senhora Aparecida",
   [`${year}-11-02`]: "Finados",
   [`${year}-11-15`]: "Proclamação da República",
+  [`${year}-11-20`]: "Dia Nacional de Zumbi e da Consciência Negra",
   [`${year}-12-25`]: "Natal",
 });
 
@@ -51,11 +50,51 @@ export function Agenda({ profile }: { profile?: any }) {
   const [googleEvents, setGoogleEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+  const [teamOwnerId, setTeamOwnerId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchTasks();
     checkGoogleConnection();
-  }, []);
+    resolveTeam();
+    // Recarrega quando admin_id mudar
+  }, [profile?.id, profile?.admin_id]);
+
+  const resolveTeam = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    let ownerId = profile?.id || user.id;
+    if (profile?.admin_id) {
+      ownerId = profile.admin_id;
+    }
+    setTeamOwnerId(ownerId);
+    fetchTasks(ownerId);
+  };
+
+  useEffect(() => {
+    if (!teamOwnerId) return;
+
+    const channel = supabase
+      .channel("agenda-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "tasks",
+          filter: `user_id=eq.${teamOwnerId}`,
+        },
+        () => {
+          fetchTasks(teamOwnerId);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [teamOwnerId]);
 
   const checkGoogleConnection = async () => {
     const {
@@ -101,15 +140,16 @@ export function Agenda({ profile }: { profile?: any }) {
     }
   };
 
-  const fetchTasks = async () => {
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData?.user) return;
-
+  const fetchTasks = async (ownerId: string) => {
     setLoading(true);
     let query = supabase.from("tasks").select("*").not("due_date", "is", null);
 
-    if (profile?.role !== "super_admin") {
-      query = query.eq("user_id", userData.user.id);
+    if (profile?.admin_id) {
+      // Modo Equipe
+      query = query.eq("user_id", profile.admin_id);
+    } else {
+      // Modo Independente: Seu user_id ou criado por você
+      query = query.or(`user_id.eq.${ownerId},created_by.eq.${ownerId}`);
     }
 
     const { data } = await query;

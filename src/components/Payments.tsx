@@ -1,7 +1,7 @@
 import React from "react";
 import { Download, FileText, CheckCircle2, FileCheck } from "lucide-react";
 
-export function Payments() {
+export function Payments({ profile }: { profile?: any }) {
   const invoiceHistory: any[] = [];
 
   return (

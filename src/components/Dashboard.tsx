@@ -56,13 +56,16 @@ export function Dashboard({
   useEffect(() => {
     let subLeads: any;
     let subTasks: any;
+    let subCustomers: any;
 
     supabase.auth.getUser().then(({ data }) => {
       if (data?.user) {
-        const userId = data.user.id;
-        fetchDashboardData(userId);
+        // Usa o ownerId correto: admin_id se for membro, senão o próprio id
+        const ownerId = profile?.admin_id || data.user.id;
 
-        // Inscrição em tempo real para leads
+        fetchDashboardData(data.user.id);
+
+        // Inscrição em tempo real para leads (usando o ownerId da equipe)
         subLeads = supabase
           .channel("dashboard-leads")
           .on(
@@ -71,13 +74,13 @@ export function Dashboard({
               event: "*",
               schema: "public",
               table: "leads",
-              ...(isSuperAdmin ? {} : { filter: `user_id=eq.${userId}` }),
+              ...(isSuperAdmin ? {} : { filter: `user_id=eq.${ownerId}` }),
             },
-            () => fetchDashboardData(userId),
+            () => fetchDashboardData(data.user.id),
           )
           .subscribe();
 
-        // Inscrição em tempo real para tarefas
+        // Inscrição em tempo real para tarefas (usando o ownerId da equipe)
         subTasks = supabase
           .channel("dashboard-tasks")
           .on(
@@ -86,39 +89,77 @@ export function Dashboard({
               event: "*",
               schema: "public",
               table: "tasks",
-              ...(isSuperAdmin ? {} : { filter: `user_id=eq.${userId}` }),
+              ...(isSuperAdmin ? {} : { filter: `user_id=eq.${ownerId}` }),
             },
-            () => fetchDashboardData(userId),
+            () => fetchDashboardData(data.user.id),
           )
           .subscribe();
+
+        // Inscrição em tempo real para clientes (usando o ownerId da equipe)
+        subCustomers = supabase
+          .channel("dashboard-customers")
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "customers",
+              ...(isSuperAdmin ? {} : { filter: `user_id=eq.${ownerId}` }),
+            },
+            () => fetchDashboardData(data.user.id),
+          )
+          .subscribe();
+
+        return () => {
+          if (subLeads) supabase.removeChannel(subLeads);
+          if (subTasks) supabase.removeChannel(subTasks);
+          if (subCustomers) supabase.removeChannel(subCustomers);
+        };
       }
     });
-
-    return () => {
-      if (subLeads) supabase.removeChannel(subLeads);
-      if (subTasks) supabase.removeChannel(subTasks);
-    };
-  }, [isSuperAdmin]);
+  }, [profile?.id, profile?.admin_id, isSuperAdmin]);
 
   const fetchDashboardData = async (userId: string) => {
     try {
       let leadsQuery = supabase.from("leads").select("*");
       let tasksQuery = supabase.from("tasks").select("*");
+      let customersQuery = supabase.from("customers").select("*");
 
+      // Se não for super admin, filtramos pelo dono do time
       if (!isSuperAdmin) {
-        leadsQuery = leadsQuery.eq("user_id", userId);
-        tasksQuery = tasksQuery.eq("user_id", userId);
+        let ownerId = userId;
+        if (profile?.admin_id) {
+          ownerId = profile.admin_id;
+          leadsQuery = leadsQuery.eq("user_id", ownerId);
+          tasksQuery = tasksQuery.eq("user_id", ownerId);
+          customersQuery = customersQuery.eq("user_id", ownerId);
+        } else {
+          // Modo Independente: Vê o que é seu (user_id) ou o que você criou
+          leadsQuery = leadsQuery.or(
+            `user_id.eq.${ownerId},created_by.eq.${ownerId}`,
+          );
+          tasksQuery = tasksQuery.or(
+            `user_id.eq.${ownerId},created_by.eq.${ownerId}`,
+          );
+          customersQuery = customersQuery.or(
+            `user_id.eq.${ownerId},created_by.eq.${ownerId}`,
+          );
+        }
       }
 
-      const { data: leadsData } = await leadsQuery.order("created_at", {
-        ascending: false,
-      });
-      const { data: tasksData } = await tasksQuery.order("created_at", {
-        ascending: false,
-      });
+      const [
+        { data: leadsData },
+        { data: tasksData },
+        { data: customersData },
+      ] = await Promise.all([
+        leadsQuery.order("created_at", { ascending: false }),
+        tasksQuery.order("created_at", { ascending: false }),
+        customersQuery.order("created_at", { ascending: false }),
+      ]);
 
       const leadsParams = leadsData || [];
       const tasksParams = tasksData || [];
+      const customersParams = customersData || [];
 
       let receivable = 0;
       let pending = 0;
@@ -136,11 +177,11 @@ export function Dashboard({
       const novosLeads = leadsParams.filter(
         (l) => l.stage === "Novo Lead",
       ).length;
-      const clientesAtivos = leadsParams.filter(
-        (l) => l.stage === "Fechado",
+      const clientesAtivos = customersParams.filter(
+        (c) => (c as any).status !== "Inativo",
       ).length;
-      const clientesInativos = leadsParams.filter(
-        (l) => l.stage !== "Fechado",
+      const clientesInativos = customersParams.filter(
+        (c) => (c as any).status === "Inativo",
       ).length;
       const projetosAtivos = tasksParams.filter(
         (t) => t.status !== "Concluído",
@@ -156,7 +197,7 @@ export function Dashboard({
         clientesInativos,
       });
 
-      setRecentClients(leadsParams.slice(0, 5));
+      setRecentClients(customersParams.slice(0, 5));
       setRecentProjects(tasksParams.slice(0, 5));
     } catch (e) {
       console.error("Erro ao carregar dados do dashboard");
@@ -436,11 +477,11 @@ export function Dashboard({
                 >
                   <div className="flex gap-4 items-center overflow-hidden">
                     <div className="w-10 h-10 rounded-lg bg-accent/20 flex items-center justify-center text-accent font-bold shrink-0">
-                      {project.title.charAt(0).toUpperCase()}
+                      {(project.title || "P").charAt(0).toUpperCase()}
                     </div>
                     <div className="overflow-hidden">
                       <h4 className="font-semibold text-sm truncate">
-                        {project.title}
+                        {project.title || "Sem título"}
                       </h4>
                       <p className="text-xs text-muted-foreground mt-0.5 truncate">
                         {project.project || "Sem cliente vinculado"}
@@ -497,11 +538,11 @@ export function Dashboard({
                 >
                   <div className="flex items-center gap-4 overflow-hidden">
                     <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold shrink-0">
-                      {client.name.charAt(0).toUpperCase()}
+                      {(client.name || "C").charAt(0).toUpperCase()}
                     </div>
                     <div className="overflow-hidden">
                       <h4 className="font-semibold text-sm flex items-center gap-2 truncate">
-                        {client.name}
+                        {client.name || "Sem nome"}
                       </h4>
                       <p className="text-xs text-muted-foreground mt-0.5 truncate">
                         {client.company || "Pessoa Física"}
@@ -509,14 +550,25 @@ export function Dashboard({
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-foreground/10 text-foreground/80">
-                      {client.stage}
+                    <span
+                      className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
+                        client.status === "Ativo"
+                          ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                          : "bg-red-500/10 border-red-500/30 text-red-400"
+                      }`}
+                    >
+                      {client.status || "Ativo"}
                     </span>
                     <p className="text-[10px] text-muted-foreground mt-1.5">
-                      {new Date(client.created_at).toLocaleDateString("pt-BR", {
-                        day: "2-digit",
-                        month: "short",
-                      })}
+                      {client.created_at
+                        ? new Date(client.created_at).toLocaleDateString(
+                            "pt-BR",
+                            {
+                              day: "2-digit",
+                              month: "short",
+                            },
+                          )
+                        : "Data N/A"}
                     </p>
                   </div>
                 </div>

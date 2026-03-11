@@ -55,10 +55,22 @@ ALTER TABLE public.clientes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.projetos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tarefas ENABLE ROW LEVEL SECURITY;
 
--- Profiles: Usuário pode ver seu próprio profile. Admin vê todos.
-CREATE POLICY "Usuários veem próprio perfil" 
+-- Profiles: Usuários veem próprio perfil, sua equipe (admin_id), ou todos se for admin/super_admin.
+DROP POLICY IF EXISTS "Usuários veem próprio perfil" ON public.profiles;
+
+CREATE POLICY "Usuários veem membros da mesma equipe" 
 ON public.profiles FOR SELECT 
-USING (auth.uid() = user_id OR (SELECT role FROM public.profiles WHERE user_id = auth.uid()) = 'admin');
+USING (
+    auth.uid() = user_id 
+    OR 
+    (SELECT role FROM public.profiles WHERE user_id = auth.uid()) IN ('admin', 'super_admin')
+    OR
+    (admin_id IS NOT NULL AND admin_id = (SELECT admin_id FROM public.profiles WHERE user_id = auth.uid()))
+    OR
+    id = (SELECT admin_id FROM public.profiles WHERE user_id = auth.uid())
+    OR
+    admin_id = (SELECT id FROM public.profiles WHERE user_id = auth.uid())
+);
 
 CREATE POLICY "Usuários atualizam próprio perfil" 
 ON public.profiles FOR UPDATE 

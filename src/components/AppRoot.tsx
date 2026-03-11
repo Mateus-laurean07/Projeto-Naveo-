@@ -7,23 +7,13 @@ import { Toaster } from "sonner";
 
 export function AppRoot() {
   const [session, setSession] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [authView, setAuthView] = useState<"login" | "register">("register");
-
-  const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-    setProfile(data);
-  };
+  const [authView, setAuthView] = useState<"login" | "register">("login");
+  const [inactiveMessage, setInactiveMessage] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session) fetchProfile(session.user.id);
       setLoading(false);
     });
 
@@ -31,9 +21,18 @@ export function AppRoot() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session) fetchProfile(session.user.id);
-      else setProfile(null);
+      setLoading(false);
     });
+
+    // Check localStorage in case of rapid kickout
+    const handleStorage = () => {
+      const reason = localStorage.getItem("kicked_out_reason");
+      if (reason) {
+        setInactiveMessage(reason);
+        localStorage.removeItem("kicked_out_reason");
+      }
+    };
+    handleStorage();
 
     return () => subscription.unsubscribe();
   }, []);
@@ -42,7 +41,7 @@ export function AppRoot() {
     return (
       <>
         <Toaster position="top-right" richColors />
-        <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="min-h-screen bg-background flex flex-col items-center justify-center space-y-4">
           <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
         </div>
       </>
@@ -54,7 +53,10 @@ export function AppRoot() {
       return (
         <>
           <Toaster position="top-right" richColors />
-          <Login onGoToRegister={() => setAuthView("register")} />
+          <Login 
+            onGoToRegister={() => setAuthView("register")} 
+            externalError={inactiveMessage}
+          />
         </>
       );
     }
@@ -69,7 +71,7 @@ export function AppRoot() {
   return (
     <>
       <Toaster position="top-right" richColors />
-      <Application />
+      <Application session={session} />
     </>
   );
 }

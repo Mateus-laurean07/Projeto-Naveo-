@@ -25,7 +25,7 @@ type Customer = {
   name: string;
   email: string;
   phone: string;
-  status: "Ativo" | "Inativo" | "Em Negociação";
+  status: "Ativo" | "Inativo";
   company: string;
   since: string;
 };
@@ -50,16 +50,47 @@ export function Customers({ profile }: { profile?: any }) {
   );
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const [teamOwnerId, setTeamOwnerId] = useState<string | null>(null);
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (data?.user) {
         setUserAuth(data.user);
-        fetchCustomers(data.user.id);
+        let ownerId = data.user.id;
+        if (profile?.admin_id) {
+          ownerId = profile.admin_id;
+        }
+        setTeamOwnerId(ownerId);
+        fetchCustomers(ownerId);
       } else {
         setLoading(false);
       }
     });
-  }, []);
+  }, [profile?.id, profile?.admin_id]);
+
+  useEffect(() => {
+    if (!teamOwnerId) return;
+
+    const channel = supabase
+      .channel("customers-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "customers",
+          filter: `user_id=eq.${teamOwnerId}`,
+        },
+        () => {
+          fetchCustomers(teamOwnerId);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [teamOwnerId]);
 
   const fetchCustomers = async (userId: string) => {
     setLoading(true);
@@ -67,7 +98,16 @@ export function Customers({ profile }: { profile?: any }) {
       .from("customers")
       .select("*")
       .order("created_at", { ascending: false });
-    if (profile?.role !== "super_admin") query = query.eq("user_id", userId);
+
+    if (profile?.role === "super_admin") {
+      // Super admin vê tudo
+    } else if (profile?.admin_id) {
+      // Modo Equipe: Vê os clientes da equipe (onde user_id = admin_id)
+      query = query.eq("user_id", profile.admin_id);
+    } else {
+      // Modo Independente: Vê os que possuem seu user_id ou que você criou
+      query = query.or(`user_id.eq.${userId},created_by.eq.${userId}`);
+    }
     const { data, error } = await query;
     if (error) toast.error("Erro ao carregar clientes.");
     else if (data) {
@@ -91,17 +131,24 @@ export function Customers({ profile }: { profile?: any }) {
   };
 
   const handleCreateCustomer = async (data: CustomerFormValues) => {
-    if (!userAuth) return;
-    const dbCustomer = { ...data, user_id: userAuth.id };
+    const ownerId = teamOwnerId || userAuth?.id;
+    if (!ownerId) return;
+
+    const dbCustomer = {
+      ...data,
+      user_id: ownerId,
+      created_by: userAuth?.id,
+    };
     const { data: newCustomer, error } = await supabase
       .from("customers")
       .insert(dbCustomer)
       .select()
       .single();
+
     if (error) toast.error("Erro ao criar cliente: " + error.message);
     else if (newCustomer) {
       toast.success("Cliente criado com sucesso!");
-      fetchCustomers(userAuth.id);
+      fetchCustomers(ownerId);
       setModalOpen(false);
     }
   };
@@ -115,11 +162,35 @@ export function Customers({ profile }: { profile?: any }) {
       .eq("id", customerToDelete.id);
     if (error) toast.error("Erro ao excluir cliente: " + error.message);
     else {
-      toast.success("Cliente excluído!");
+      toast.success("Cliente exluído!");
       setCustomers((prev) => prev.filter((c) => c.id !== customerToDelete.id));
       setCustomerToDelete(null);
     }
     setIsDeleting(false);
+  };
+
+  const handleStatusChange = async (
+    customerId: string,
+    newStatus: "Ativo" | "Inativo",
+  ) => {
+    // Atualização otimista: muda no UI primeiro para ser instantâneo
+    const oldCustomers = [...customers];
+    setCustomers((prev) =>
+      prev.map((c) => (c.id === customerId ? { ...c, status: newStatus } : c)),
+    );
+
+    const { error } = await supabase
+      .from("customers")
+      .update({ status: newStatus })
+      .eq("id", customerId);
+
+    if (error) {
+      toast.error("Erro ao atualizar status.");
+      // Se der erro, volta ao estado anterior
+      setCustomers(oldCustomers);
+    } else {
+      toast.success(`Status alterado para ${newStatus}!`);
+    }
   };
 
   const {
@@ -306,10 +377,30 @@ export function Customers({ profile }: { profile?: any }) {
                     <td className="py-4 px-6 text-sm text-muted-foreground">
                       {c.company || "---"}
                     </td>
-                    <td className="py-4 px-6">
-                      <span className="px-2 py-1 rounded-full text-xs font-medium border border-accent/20 bg-accent/10 text-accent">
-                        {c.status}
-                      </span>
+                    <td className="py-4 px-6 inline-flex justify-center">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const next =
+                            c.status === "Ativo" ? "Inativo" : "Ativo";
+                          handleStatusChange(c.id, next);
+                        }}
+                        className={`group relative min-w-[100px] h-8 px-4 rounded-full text-xs font-bold border transition-all duration-200 active:scale-95 flex items-center justify-center overflow-hidden ${
+                          c.status === "Ativo"
+                            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-red-500/10 hover:border-red-500/20 hover:text-red-400"
+                            : "bg-red-500/10 border-red-500/30 text-red-400 hover:bg-emerald-500/10 hover:border-emerald-500/20 hover:text-emerald-400"
+                        }`}
+                      >
+                        {/* Status Atual (Visível por padrão) */}
+                        <span className="absolute transition-transform duration-300 group-hover:translate-y-[-150%]">
+                          {c.status}
+                        </span>
+
+                        {/* Ação (Visível no Hover) */}
+                        <span className="absolute translate-y-[150%] transition-transform duration-300 group-hover:translate-y-0 text-[10px] uppercase tracking-wider">
+                          {c.status === "Ativo" ? "Desativar" : "Ativar"}
+                        </span>
+                      </button>
                     </td>
                     <td className="py-4 px-6 text-right">
                       <button

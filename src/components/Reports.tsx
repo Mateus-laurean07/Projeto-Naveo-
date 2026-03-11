@@ -11,15 +11,10 @@ import {
   User,
 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  Legend,
-} from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { cn } from "../lib/utils";
+import { supabase } from "../lib/supabase";
+import { toast } from "sonner";
 
 type ReportItem = {
   id: string;
@@ -35,24 +30,99 @@ export function Reports({ profile }: { profile?: any }) {
   const [items, setItems] = useState<ReportItem[]>([]);
   const [open, setOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ReportItem | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [teamOwnerId, setTeamOwnerId] = useState<string | null>(null);
 
-  // Load from local storage for now to keep it working without database migrations
   useEffect(() => {
-    const saved = localStorage.getItem("naveo_reports");
-    if (saved) {
-      try {
-        setItems(JSON.parse(saved));
-      } catch (e) {}
-    }
-  }, []);
+    // Sempre tenta buscar — usa profile se disponível, caso contrário usa auth diretamente
+    resolveTeamAndFetch();
+    // Recarrega quando admin_id mudar
+  }, [profile?.id, profile?.admin_id]);
 
-  const saveItems = (newItems: ReportItem[]) => {
-    setItems(newItems);
-    localStorage.setItem("naveo_reports", JSON.stringify(newItems));
+  const resolveTeamAndFetch = async () => {
+    setLoading(true);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      // admin_id do profile (banco) tem prioridade sobre auth metadata
+      const adminId = profile?.admin_id || user.user_metadata?.admin_id;
+      const ownerId = adminId || profile?.id || user.id;
+
+      setTeamOwnerId(ownerId);
+      await fetchReports(ownerId, adminId || null);
+    } catch (e) {
+      console.error("[Reports] Erro ao resolver equipe:", e);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleCreate = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!teamOwnerId) return;
+
+    const channel = supabase
+      .channel("reports-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "reports",
+          filter: `user_id=eq.${teamOwnerId}`,
+        },
+        () => {
+          fetchReports(teamOwnerId, profile?.admin_id || null);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [teamOwnerId]);
+
+  const fetchReports = async (ownerId: string, adminId: string | null) => {
+    let query = supabase.from("reports").select("*");
+
+    if (adminId) {
+      // Modo Equipe: Vê os relatórios da equipe do gestor
+      query = query.eq("user_id", adminId);
+    } else {
+      // Modo Independente: Vê os que possuem seu user_id ou que você criou
+      query = query.or(`user_id.eq.${ownerId},created_by.eq.${ownerId}`);
+    }
+
+    const { data, error } = await query.order("created_at", {
+      ascending: false,
+    });
+
+    if (error) {
+      console.error("[Reports] Erro ao buscar:", error);
+      toast.error("Erro ao carregar relatórios: " + error.message);
+    } else if (data) {
+      setItems(
+        data.map((item) => ({
+          id: item.id,
+          title: item.title,
+          status: item.status,
+          description: item.description,
+          assigneeName: item.assignee_name,
+          assigneeAvatar: item.assignee_avatar,
+        })),
+      );
+    }
+  };
+
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!teamOwnerId) return;
+
     const form = e.target as HTMLFormElement;
     const title = (form.elements.namedItem("title") as HTMLInputElement).value;
     const description = (
@@ -63,24 +133,33 @@ export function Reports({ profile }: { profile?: any }) {
     ).value;
 
     if (title) {
-      const newItem: ReportItem = {
-        id: crypto.randomUUID(),
+      const { error } = await supabase.from("reports").insert({
+        user_id: teamOwnerId,
+        created_by: profile?.id,
         title,
         description,
-        assigneeName: assigneeName || "Não Atribuído",
-        assigneeAvatar: assigneeName
-          ? `https://ui-avatars.com/api/?name=${encodeURIComponent(assigneeName)}&background=random`
+        assignee_name: assigneeName || "Não Atribuído",
+        assignee_avatar: assigneeName
+          ? `https://ui-avatars.com/api/?name=${encodeURIComponent(
+              assigneeName,
+            )}&background=random`
           : "",
         status: "Novo",
-      };
-      saveItems([...items, newItem]);
-      setOpen(false);
+      });
+
+      if (error) {
+        toast.error("Erro ao criar relatório.");
+      } else {
+        toast.success("Relatório criado!");
+        setOpen(false);
+        fetchReports(teamOwnerId, profile?.admin_id || null);
+      }
     }
   };
 
-  const handleEditSave = (e: React.FormEvent) => {
+  const handleEditSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingItem) return;
+    if (!editingItem || !teamOwnerId) return;
 
     const form = e.target as HTMLFormElement;
     const title = (form.elements.namedItem("title") as HTMLInputElement).value;
@@ -91,47 +170,59 @@ export function Reports({ profile }: { profile?: any }) {
       form.elements.namedItem("assignee") as HTMLInputElement
     ).value;
 
-    const updatedItem = {
-      ...editingItem,
-      title,
-      description,
-      assigneeName: assigneeName || "Não Atribuído",
-      assigneeAvatar:
-        assigneeName && assigneeName !== editingItem.assigneeName
-          ? `https://ui-avatars.com/api/?name=${encodeURIComponent(assigneeName)}&background=random`
-          : editingItem.assigneeAvatar || "",
-    };
+    const { error } = await supabase
+      .from("reports")
+      .update({
+        title,
+        description,
+        assignee_name: assigneeName || "Não Atribuído",
+        assignee_avatar:
+          assigneeName && assigneeName !== editingItem.assigneeName
+            ? `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                assigneeName,
+              )}&background=random`
+            : editingItem.assigneeAvatar || "",
+      })
+      .eq("id", editingItem.id);
 
-    saveItems(items.map((i) => (i.id === editingItem.id ? updatedItem : i)));
-    setEditingItem(null);
+    if (error) {
+      toast.error("Erro ao atualizar relatório.");
+    } else {
+      toast.success("Relatório atualizado!");
+      setEditingItem(null);
+      fetchReports(teamOwnerId, profile?.admin_id || null);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    saveItems(items.filter((item) => item.id !== id));
+  const handleDelete = async (id: string) => {
+    if (!teamOwnerId) return;
+    const { error } = await supabase.from("reports").delete().eq("id", id);
+    if (error) {
+      toast.error("Erro ao excluir relatório.");
+    } else {
+      toast.success("Relatório excluído!");
+      fetchReports(teamOwnerId, profile?.admin_id || null);
+    }
   };
 
-  const handleAdvance = (id: string) => {
-    saveItems(
-      items.map((item) => {
-        if (item.id === id) {
-          if (item.status === "Novo")
-            return { ...item, status: "Em Andamento" };
-        }
-        return item;
-      }),
-    );
+  const handleStatusChange = async (
+    id: string,
+    newStatus: ReportItem["status"],
+  ) => {
+    if (!teamOwnerId) return;
+    const { error } = await supabase
+      .from("reports")
+      .update({ status: newStatus })
+      .eq("id", id);
+
+    if (error) {
+      toast.error("Erro ao atualizar status.");
+    } else {
+      fetchReports(teamOwnerId, profile?.admin_id || null);
+    }
   };
 
-  const handleFinish = (id: string) => {
-    saveItems(
-      items.map((item) => {
-        if (item.id === id) return { ...item, status: "Finalizado" };
-        return item;
-      }),
-    );
-  };
-
-  const renderColumn = (title: string, status: ReportItem["status"]) => {
+  const renderColumn = (columnTitle: string, status: ReportItem["status"]) => {
     const columnItems = items.filter((i) => i.status === status);
 
     const getStatusStyles = () => {
@@ -170,7 +261,6 @@ export function Reports({ profile }: { profile?: any }) {
 
     return (
       <div className="flex-shrink-0 w-[360px] bg-background/80 backdrop-blur-2xl rounded-[2rem] flex flex-col border border-border/50 shadow-2xl relative pb-2 max-h-[70vh] lg:max-h-[calc(100vh-360px)] min-h-[400px] overflow-hidden">
-        {/* Glow Top Line */}
         <div
           className="absolute inset-x-0 top-0 h-1 opacity-70"
           style={{ backgroundColor: styles.color }}
@@ -186,7 +276,7 @@ export function Reports({ profile }: { profile?: any }) {
               )}
             />
             <h3 className="font-extrabold text-sm tracking-wide text-foreground uppercase">
-              {title}
+              {columnTitle}
             </h3>
             <span className="ml-1 bg-foreground/10 text-foreground/80 text-xs py-1 px-3 rounded-full font-bold">
               {columnItems.length}
@@ -205,7 +295,6 @@ export function Reports({ profile }: { profile?: any }) {
                   : "bg-card border-border shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300",
               )}
             >
-              {/* Card Glow Effect na Hover */}
               <div className="absolute inset-0 bg-foreground/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
               <div className="relative z-10 flex justify-between items-start gap-4">
@@ -276,7 +365,9 @@ export function Reports({ profile }: { profile?: any }) {
                 <div className="flex flex-1 gap-2">
                   {status === "Novo" && (
                     <button
-                      onClick={() => handleAdvance(item.id)}
+                      onClick={() =>
+                        handleStatusChange(item.id, "Em Andamento")
+                      }
                       className="flex-1 py-2 px-3 rounded-xl bg-[#f59e0b]/10 hover:bg-[#f59e0b] hover:text-foreground text-[#f59e0b] transition-all duration-300 flex items-center justify-center gap-2 text-xs font-bold"
                       title="Prosseguir para Em Andamento"
                     >
@@ -286,7 +377,7 @@ export function Reports({ profile }: { profile?: any }) {
 
                   {status === "Em Andamento" && (
                     <button
-                      onClick={() => handleFinish(item.id)}
+                      onClick={() => handleStatusChange(item.id, "Finalizado")}
                       className="flex-1 py-2 px-3 rounded-xl bg-[#10b981]/10 hover:bg-[#10b981] hover:text-foreground text-[#10b981] transition-all duration-300 flex items-center justify-center gap-2 text-xs font-bold shadow-[0_0_15px_rgba(16,185,129,0.15)] hover:shadow-[#10b981]/40"
                       title="Marcar como Finalizado"
                     >
@@ -457,7 +548,6 @@ export function Reports({ profile }: { profile?: any }) {
           </Dialog.Portal>
         </Dialog.Root>
 
-        {/* Edit Modal */}
         <Dialog.Root
           open={!!editingItem}
           onOpenChange={(isOpen) => !isOpen && setEditingItem(null)}
@@ -545,11 +635,9 @@ export function Reports({ profile }: { profile?: any }) {
         </Dialog.Root>
       </div>
 
-      {/* Gráfico de Progresso Status Geral (100% da tela) */}
       <div className="hidden lg:flex w-full bg-card backdrop-blur-xl rounded-[2rem] border border-border/50 p-6 lg:p-8 items-center gap-8 relative shadow-xl overflow-hidden min-h-[160px]">
         <div className="absolute inset-0 bg-gradient-to-r from-accent/5 via-transparent to-emerald-400/5 pointer-events-none" />
 
-        {/* Pie gráfico à esquerda */}
         <div className="w-[180px] h-[120px] relative shrink-0 border-r border-border/50 pr-8">
           {chartData.length > 0 ? (
             <>
@@ -598,7 +686,6 @@ export function Reports({ profile }: { profile?: any }) {
           )}
         </div>
 
-        {/* Dashboard Cards centralizados/direita */}
         <div className="flex-1 flex gap-6 h-full items-center">
           {chartData.length > 0 ? (
             chartData.map((data, index) => (

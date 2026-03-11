@@ -120,11 +120,13 @@ export function Settings({ profile }: { profile?: any }) {
         {/* Content Area */}
         <div className="flex-1 bg-card/40 backdrop-blur-3xl rounded-[2.5rem] border border-border/50 p-8 overflow-y-auto custom-scrollbar shadow-2xl relative">
           {activeTab === "perfil" && <Profile />}
-          {activeTab === "planos" && <Plans setActiveTab={setActiveTab} />}
-          {activeTab === "assinaturas" && (
-            <Subscriptions setActiveTab={setActiveTab} />
+          {activeTab === "planos" && (
+            <Plans profile={profile} setActiveTab={setActiveTab} />
           )}
-          {activeTab === "financeiro" && <Payments />}
+          {activeTab === "assinaturas" && (
+            <Subscriptions profile={profile} setActiveTab={setActiveTab} />
+          )}
+          {activeTab === "financeiro" && <Payments profile={profile} />}
           {activeTab === "equipes" && <Teams profile={profile} />}
         </div>
       </div>

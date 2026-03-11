@@ -806,18 +806,83 @@ export function CRM({ profile }: { profile?: any }) {
   const [activeLead, setActiveLead] = useState<Lead | null>(null);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [userAuth, setUserAuth] = useState<any>(null);
+  const [teamOwnerId, setTeamOwnerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data?.user) {
-        setUserAuth(data.user);
-        fetchLeads(data.user.id);
-      } else {
-        setLoading(false);
+    if (profile?.id) {
+      resolveTeamAndFetch();
+    }
+    // Recarrega quando o admin_id mudar (carregamento assíncrono do perfil)
+  }, [profile?.id, profile?.admin_id]);
+
+  // Resolve o ID do dono do time (admin raiz) e carrega leads
+  const resolveTeamAndFetch = async () => {
+    setLoading(true);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      setUserAuth(user);
+
+      // Se é membro (tem admin_id), usa o admin como dono dos dados
+      let ownerId = profile?.id || user.id;
+      if (profile?.admin_id) {
+        ownerId = profile.admin_id;
       }
+      setTeamOwnerId(ownerId);
+      await fetchLeads(ownerId);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!teamOwnerId) return;
+
+    const channel = supabase
+      .channel("crm-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "leads",
+          filter: `user_id=eq.${teamOwnerId}`,
+        },
+        () => {
+          fetchLeads(teamOwnerId);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [teamOwnerId]);
+
+  const fetchLeads = async (ownerId: string) => {
+    let query = supabase.from("leads").select("*");
+
+    if (profile?.admin_id) {
+      // Modo Equipe: Vê tudo da equipe
+      query = query.eq("user_id", profile.admin_id);
+    } else {
+      // Modo Independente: Vê o que é seu ou o que você criou
+      query = query.or(`user_id.eq.${ownerId},created_by.eq.${ownerId}`);
+    }
+
+    const { data, error } = await query.order("created_at", {
+      ascending: false,
     });
-  }, []);
+
+    if (error) {
+      toast.error("Erro ao carregar leads.");
+    } else if (data) {
+      setLeads(data);
+    }
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -827,30 +892,15 @@ export function CRM({ profile }: { profile?: any }) {
     }),
   );
 
-  const fetchLeads = async (userId: string) => {
-    setLoading(true);
-    let query = supabase
-      .from("leads")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (profile?.role !== "super_admin") {
-      query = query.eq("user_id", userId);
-    }
-
-    const { data, error } = await query;
-    if (error) {
-      toast.error("Erro ao carregar leads.");
-    } else if (data) {
-      setLeads(data);
-    }
-    setLoading(false);
-  };
-
   const handleCreateLead = async (newL: Lead) => {
-    if (!userAuth) return;
+    const ownerId = teamOwnerId || profile?.id;
+    if (!ownerId) return;
     const { id, ...leadWithoutId } = newL;
-    const dbLead = { ...leadWithoutId, user_id: userAuth.id };
+    const dbLead = {
+      ...leadWithoutId,
+      user_id: ownerId,
+      created_by: profile?.id,
+    };
 
     setLeads([newL, ...leads]);
 

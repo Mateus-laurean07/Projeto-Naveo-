@@ -42,9 +42,31 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-export function Login({ onGoToRegister }: { onGoToRegister: () => void }) {
+export function Login({ 
+  onGoToRegister, 
+  externalError 
+}: { 
+  onGoToRegister: () => void;
+  externalError?: string | null;
+}) {
   const [showPassword, setShowPassword] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(externalError || null);
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  React.useEffect(() => {
+    if (externalError) {
+      setFormError(externalError);
+      setIsVerifying(false);
+    }
+  }, [externalError]);
+
+  React.useEffect(() => {
+    const reason = localStorage.getItem("kicked_out_reason");
+    if (reason) {
+      setFormError(reason);
+      localStorage.removeItem("kicked_out_reason");
+    }
+  }, []);
 
   const {
     register,
@@ -56,15 +78,21 @@ export function Login({ onGoToRegister }: { onGoToRegister: () => void }) {
 
   const onSubmit = async (data: LoginFormValues) => {
     setFormError(null);
-    const { error } = await supabase.auth.signInWithPassword({
+    setIsVerifying(true);
+    
+    const { data: authData, error } = await supabase.auth.signInWithPassword({
       email: data.email,
       password: data.password,
     });
 
     if (error) {
+      setIsVerifying(false);
       let ptMessage = error.message;
       if (ptMessage.toLowerCase().includes("invalid login credentials")) {
         ptMessage = "E-mail ou senha incorretos.";
+      } else if (ptMessage.toLowerCase().includes("email not confirmed")) {
+        ptMessage =
+          "Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada!";
       } else if (
         ptMessage.toLowerCase().includes("email rate limit exceeded") ||
         ptMessage.toLowerCase().includes("rate limit")
@@ -75,6 +103,7 @@ export function Login({ onGoToRegister }: { onGoToRegister: () => void }) {
       }
       setFormError(ptMessage);
     }
+    // Se não houver erro, mantemos isVerifying true enquanto AppRoot assume
   };
 
   return (
@@ -167,11 +196,14 @@ export function Login({ onGoToRegister }: { onGoToRegister: () => void }) {
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isVerifying}
               className="w-full bg-accent hover:bg-accent/80 text-foreground py-3.5 rounded-xl font-medium transition-all shadow-[0_0_20px_hsl(var(--accent))/30] hover:shadow-[0_0_30px_hsl(var(--accent))/50] active:scale-[0.98] flex items-center justify-center gap-2 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? (
-                <div className="w-5 h-5 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
+              {isSubmitting || isVerifying ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
+                  {isVerifying ? "Verificando Conta..." : "Acessando..."}
+                </>
               ) : (
                 <>
                   <LogIn className="w-5 h-5" /> Entrar na Plataforma

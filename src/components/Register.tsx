@@ -96,6 +96,9 @@ export function Register({ onGoToLogin }: { onGoToLogin: () => void }) {
         .update({ status: "accepted" })
         .eq("email", data.email)
         .eq("status", "pending");
+
+      // Forçar refresh para atualizar dados
+      supabase.auth.refreshSession();
     }
 
     if (error) {
@@ -106,6 +109,9 @@ export function Register({ onGoToLogin }: { onGoToLogin: () => void }) {
       ) {
         ptMessage =
           "Limite de tentativas de e-mail atingido por segurança. Por favor, aguarde alguns instantes.";
+      } else if (ptMessage.toLowerCase().includes("confirmation email")) {
+        ptMessage =
+          "A conta foi criada, mas o serviço de e-mail (Resend) bloqueou o envio automático. Tente fazer o login diretamente agora! Se não funcionar, desative a 'Confirmação de E-mail' no painel do Supabase.";
       } else if (ptMessage.toLowerCase().includes("user already registered")) {
         ptMessage = "Este e-mail já está cadastrado no sistema.";
       } else if (ptMessage.toLowerCase().includes("password")) {
@@ -115,6 +121,18 @@ export function Register({ onGoToLogin }: { onGoToLogin: () => void }) {
       }
       setFormError(ptMessage);
     } else {
+      // Disparar broadcast alertando todos os painéis masters sobre o novo cadastro
+      const channel = supabase.channel("admin-notifications");
+      channel.subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          await channel.send({
+            type: "broadcast",
+            event: "new_registration",
+            payload: { email: data.email, name: data.name },
+          });
+          supabase.removeChannel(channel);
+        }
+      });
       setSuccess(true);
     }
   };
@@ -138,21 +156,24 @@ export function Register({ onGoToLogin }: { onGoToLogin: () => void }) {
           {success ? (
             <div className="text-center py-6 animate-fade-in text-balance">
               <div className="w-20 h-20 bg-emerald-500/10 text-emerald-500 rounded-3xl flex items-center justify-center mx-auto mb-6 border-2 border-emerald-500/20 shadow-lg shadow-emerald-500/10">
-                <UserPlus className="w-10 h-10" />
+                <Mail className="w-10 h-10" />
               </div>
               <h3 className="text-2xl font-black text-foreground mb-3">
-                Conta Criada!
+                Verifique seu E-mail!
               </h3>
               <p className="text-muted-foreground mb-8 leading-relaxed">
-                Sua conta foi configurada com sucesso. Como desabilitamos a
-                confirmação por e-mail,
-                <strong> você já pode acessar o sistema agora mesmo.</strong>
+                Enviamos um link de confirmação para o seu e-mail.
+                <strong>
+                  {" "}
+                  Acesse sua caixa de entrada e clique no link para ativar sua
+                  conta.
+                </strong>
               </p>
               <button
                 onClick={onGoToLogin}
                 className="w-full bg-accent hover:bg-accent/80 text-white py-4 rounded-2xl font-black transition-all shadow-xl shadow-accent/20 active:scale-95"
               >
-                Ir para o Login
+                Voltar para o Login
               </button>
             </div>
           ) : (

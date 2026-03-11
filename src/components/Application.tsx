@@ -13,7 +13,12 @@ import { Settings } from "./Settings";
 import { AdminPanel } from "./AdminPanel";
 import { LoadingScreen } from "./LoadingScreen";
 
-export function Application() {
+interface ApplicationProps {
+  session?: any;
+  initialProfile?: any;
+}
+
+export function Application({ session }: ApplicationProps) {
   const [currentTab, setTab] = useState("dashboard");
   const [collapsed, setCollapsed] = useState(false);
   const [profile, setProfile] = useState<any>(null);
@@ -38,68 +43,154 @@ export function Application() {
   };
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data?.user) {
-        const metadata = data.user.user_metadata;
-        // Pre-fill with metadata while loading real profile
-        if (metadata?.full_name) {
-          setProfile({
-            id: data.user.id,
-            full_name: metadata.full_name,
-            role: metadata.role || "admin",
-            email: data.user.email,
-          });
+    async function initAuth() {
+      try {
+        const user = session?.user || (await supabase.auth.getUser()).data.user;
+
+        if (!user) {
+          setIsPageLoading(false);
+          return;
         }
 
-        supabase
+        // 1. Set basic profile from metadata first for immediate display
+        const metadata = user.user_metadata;
+        setProfile({
+          id: user.id,
+          full_name: metadata?.full_name || user.email?.split("@")[0] || "Usuário",
+          role: metadata?.role || "admin",
+          email: user.email,
+          admin_id: metadata?.admin_id || null,
+        });
+
+        // 2. Fetch complete profile from database
+        const { data: dbProfile } = await supabase
           .from("profiles")
           .select("*")
-          .eq("id", data.user.id)
-          .single()
-          .then(({ data: p }) => {
-            if (p) {
-              setProfile({ ...p, email: p.email || data.user.email });
-              // Update last_login_at
-              supabase
-                .from("profiles")
-                .update({
-                  last_login_at: new Date().toISOString(),
-                  email: p.email || data.user.email,
-                })
-                .eq("id", p.id)
-                .then();
-            }
-            // Termina o carregamento inicial quando o perfil chegar
-            setTimeout(() => setIsPageLoading(false), 1000);
-          });
-      } else {
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (dbProfile?.is_active === false) {
+          localStorage.setItem("kicked_out_reason", "Acesso Bloqueado: Sua conta foi inativada pelo Administrador enquanto você estava usando o sistema.");
+          await supabase.auth.signOut();
+          setIsPageLoading(false);
+          return;
+        }
+
+        if (dbProfile) {
+          const updates: any = {
+            last_login_at: new Date().toISOString(),
+            email: dbProfile.email || user.email,
+          };
+
+          if (!dbProfile.admin_id && metadata?.admin_id) {
+            updates.admin_id = metadata.admin_id;
+            dbProfile.admin_id = metadata.admin_id;
+          }
+
+          const fullProfile = {
+            ...dbProfile,
+            email: dbProfile.email || user.email,
+            admin_id: dbProfile.admin_id || metadata?.admin_id || null,
+          };
+
+          setProfile(fullProfile);
+          await supabase.from("profiles").update(updates).eq("id", user.id);
+        }
+
+        // 3. Subscribe to real-time profile changes
+        const profileSubscription = supabase
+          .channel(`profile-sync-${user.id}`)
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "profiles",
+              filter: `id=eq.${user.id}`,
+            },
+            (payload) => {
+              if (payload.new) {
+                const updatedProfile = payload.new as any;
+                
+                // Kicks user out immediately in real-time if deactivated by admin
+                if (updatedProfile.is_active === false) {
+                  localStorage.setItem("kicked_out_reason", "Acesso Bloqueado: Sua conta acaba de ser inativada pelo Administrador.");
+                  supabase.auth.signOut();
+                  return;
+                }
+
+                setProfile((prev: any) => ({
+                  ...prev,
+                  ...updatedProfile,
+                  email: updatedProfile.email || user.email,
+                }));
+              }
+            },
+          )
+          .subscribe();
+
+        return () => {
+          supabase.removeChannel(profileSubscription);
+        };
+      } catch (error) {
+        console.error("Erro ao carregar dados iniciais:", error);
+      } finally {
         setIsPageLoading(false);
       }
-    });
+    }
+
+    const cleanup = initAuth();
+
+    return () => {
+      cleanup.then((fn) => fn && fn());
+    };
   }, []);
 
   useEffect(() => {
     if (!profile?.id) return;
 
-    const channel = supabase.channel("online-users", {
-      config: {
-        presence: {
-          key: profile.id,
-        },
-      },
+    // Canal de presença global — único em toda a aplicação
+    const channel = supabase.channel("naveo-presence", {
+      config: { presence: { key: profile.id } },
     });
 
     channel.subscribe(async (status) => {
       if (status === "SUBSCRIBED") {
         await channel.track({
-          online_at: new Date().toISOString(),
+          user_id: profile.id,
           full_name: profile.full_name,
+          avatar_url: profile.avatar_url || null,
+          role: profile.role,
+          online_at: new Date().toISOString(),
         });
       }
     });
 
+    // Heartbeat: atualiza last_seen_at a cada 30 segundos no banco
+    const updatePresence = async () => {
+      await supabase
+        .from("profiles")
+        .update({ last_seen_at: new Date().toISOString() })
+        .eq("id", profile.id);
+    };
+
+    // Atualiza imediatamente e depois a cada 30s
+    updatePresence();
+    const heartbeat = setInterval(updatePresence, 30_000);
+
+    // Ao fechar/sair limpa o heartbeat
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        // Marca como "saindo" mas o intervalo cuida do resto quando voltar
+        clearInterval(heartbeat);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(heartbeat);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [profile?.id]);
 

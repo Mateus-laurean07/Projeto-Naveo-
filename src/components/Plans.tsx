@@ -45,8 +45,10 @@ const availablePlans = [
 ];
 
 export function Plans({
+  profile: activeProfile,
   setActiveTab,
 }: {
+  profile?: any;
   setActiveTab?: (tab: string) => void;
 }) {
   const [isProfileComplete, setIsProfileComplete] = useState(false);
@@ -56,13 +58,13 @@ export function Plans({
   useEffect(() => {
     const checkProfile = async () => {
       try {
-        const { data: authData } = await supabase.auth.getUser();
-        if (!authData.user) return;
+        const ownerId = activeProfile?.admin_id || activeProfile?.id;
+        if (!ownerId) return;
 
         const { data, error } = await supabase
           .from("profiles")
           .select("*")
-          .eq("id", authData.user.id)
+          .eq("id", ownerId)
           .single();
 
         if (error) {
@@ -71,13 +73,7 @@ export function Plans({
 
         if (data) {
           const isComplete = Boolean(
-            data.full_name?.trim() &&
-            data.phone?.trim() &&
-            data.document?.trim() &&
-            data.address?.trim() &&
-            data.city?.trim() &&
-            data.state?.trim() &&
-            data.zip_code?.trim(),
+            data.full_name?.trim() && data.email?.trim(), // Relaxando para exigir apenas nome e email para o upgrade básico
           );
           setIsProfileComplete(isComplete);
         }

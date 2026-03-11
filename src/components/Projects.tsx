@@ -531,6 +531,7 @@ function EditTaskModal({
   onSave,
   onDelete,
   onSaveComment,
+  onSaveAttachments,
   profile,
 }: {
   task: Task | null;
@@ -538,6 +539,7 @@ function EditTaskModal({
   onSave: (t: Task) => void;
   onDelete: (id: string) => void;
   onSaveComment?: (taskId: string, newCommentData: any[]) => void;
+  onSaveAttachments?: (taskId: string, newAttachments: string[]) => void;
   profile?: any;
 }) {
   const [activeTab, setActiveTab] = React.useState<
@@ -560,14 +562,14 @@ function EditTaskModal({
 
     const comment = {
       id: crypto.randomUUID(),
-      user: profile?.full_name || "Você",
+      user: profile?.full_name || "Membro",
       text: newComment,
       date: new Date().toLocaleTimeString("pt-BR", {
         hour: "2-digit",
         minute: "2-digit",
       }),
-      isMine: true,
-      avatar: profile?.avatarUrl || profile?.avatar_url || "",
+      userId: profile?.id, // ID único para identificar o autor
+      avatar: profile?.avatar_url || "",
     };
 
     const updatedData = [...(task.comments_data || []), comment];
@@ -584,6 +586,16 @@ function EditTaskModal({
       .from("tasks")
       .update({ comments_data: updatedData, comments: updatedData.length })
       .eq("id", task.id);
+
+    // Enviar notificação global do comentário
+    supabase
+      .from("sys_notifications")
+      .insert({
+        title: "Nova Mensagem/Anotação",
+        message: `${profile?.full_name || "Alguém"} comentou no projeto "${task.title}".`,
+        type: "comment",
+      })
+      .then();
   };
 
   return (
@@ -725,14 +737,12 @@ function EditTaskModal({
                 </form>
               </div>
             ) : activeTab === "comments" ? (
-              <div className="flex flex-col h-full bg-[#111111]/80 rounded-b-2xl overflow-hidden relative">
-                {/* Imagem de fundo estilo whatsapp web (opcional, dá um charme) */}
+              <div className="flex flex-col h-full bg-background rounded-b-2xl overflow-hidden relative">
                 <div
-                  className="absolute inset-0 opacity-[0.03] pointer-events-none"
+                  className="absolute inset-0 opacity-[0.02] pointer-events-none"
                   style={{
                     backgroundImage:
-                      "url('https://i.pinimg.com/736x/8c/98/99/8c98994518b575bfd8c949e91d20548b.jpg')",
-                    backgroundSize: "200px",
+                      "url('https://www.transparenttextures.com/patterns/cubes.png')",
                   }}
                 />
 
@@ -744,75 +754,79 @@ function EditTaskModal({
                       </span>
                     </div>
                   ) : (
-                    task.comments_data.map((msg, idx) => (
-                      <div
-                        key={msg.id || idx}
-                        className={cn(
-                          "flex w-full items-end gap-2",
-                          msg.isMine ? "justify-end" : "justify-start",
-                        )}
-                      >
-                        {!msg.isMine && (
-                          <div className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center bg-background border border-border/40 overflow-hidden shadow-sm mb-1 bg-card">
-                            {msg.avatar ? (
-                              <img
-                                src={msg.avatar}
-                                className="w-full h-full object-cover"
-                                alt=""
-                              />
-                            ) : (
-                              <User className="w-4 h-4 text-muted-foreground" />
-                            )}
-                          </div>
-                        )}
+                    task.comments_data.map((msg: any, idx) => {
+                      const isMine = msg.userId === profile?.id;
+                      return (
                         <div
+                          key={msg.id || idx}
                           className={cn(
-                            "max-w-[70%] px-4 py-2.5 rounded-2xl shadow-sm relative group",
-                            msg.isMine
-                              ? "bg-[#005c4b] text-[#e9edef] rounded-tr-sm"
-                              : "bg-[#202c33] text-[#e9edef] border border-border/30 rounded-tl-sm",
+                            "flex w-full items-end gap-2",
+                            isMine ? "justify-end" : "justify-start",
                           )}
                         >
-                          {!msg.isMine && (
-                            <div className="text-[11px] font-bold text-emerald-400 mb-1">
-                              {msg.user}
+                          {!isMine && (
+                            <div className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center bg-background border border-border/40 overflow-hidden shadow-sm mb-1">
+                              {msg.avatar ? (
+                                <img
+                                  src={msg.avatar}
+                                  className="w-full h-full object-cover"
+                                  alt=""
+                                />
+                              ) : (
+                                <User className="w-4 h-4 text-muted-foreground" />
+                              )}
                             </div>
                           )}
-                          <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                            {msg.text}
-                          </p>
-                          <div className="text-[10px] text-white/50 text-right mt-1 opacity-80">
-                            {msg.date}
-                          </div>
-                        </div>
-                        {msg.isMine && (
-                          <div className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center bg-background border border-border/40 overflow-hidden shadow-sm mb-1 bg-card">
-                            {msg.avatar ||
-                            profile?.avatar_url ||
-                            profile?.avatarUrl ? (
-                              <img
-                                src={
-                                  msg.avatar ||
-                                  profile?.avatar_url ||
-                                  profile?.avatarUrl
-                                }
-                                className="w-full h-full object-cover"
-                                alt=""
-                              />
-                            ) : (
-                              <User className="w-4 h-4 text-muted-foreground" />
+                          <div
+                            className={cn(
+                              "max-w-[70%] px-4 py-2.5 rounded-2xl shadow-sm relative group",
+                              isMine
+                                ? "bg-primary text-primary-foreground rounded-tr-sm"
+                                : "bg-card text-foreground border border-border/60 rounded-tl-sm",
                             )}
+                          >
+                            {!isMine && (
+                              <div className="text-[11px] font-bold text-primary mb-1">
+                                {msg.user}
+                              </div>
+                            )}
+                            <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                              {msg.text}
+                            </p>
+                            <div
+                              className={cn(
+                                "text-[10px] text-right mt-1 opacity-60",
+                                isMine
+                                  ? "text-primary-foreground/70"
+                                  : "text-muted-foreground",
+                              )}
+                            >
+                              {msg.date}
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    ))
+                          {isMine && (
+                            <div className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center bg-background border border-border/40 overflow-hidden shadow-sm mb-1">
+                              {msg.avatar || profile?.avatar_url ? (
+                                <img
+                                  src={msg.avatar || profile?.avatar_url}
+                                  className="w-full h-full object-cover"
+                                  alt=""
+                                />
+                              ) : (
+                                <User className="w-4 h-4 text-muted-foreground" />
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
                   )}
                   <div ref={messagesEndRef} />
                 </div>
 
-                <div className="p-3 bg-[#202c33] border-t border-border/20 z-10 shrink-0">
+                <div className="p-3 bg-card border-t border-border z-10 shrink-0">
                   <div className="flex gap-2 items-end">
-                    <div className="flex bg-[#2a3942] rounded-xl flex-1 items-end relative overflow-hidden">
+                    <div className="flex bg-background border border-border rounded-xl flex-1 items-end relative overflow-hidden">
                       <input
                         type="file"
                         id="comment-attachment"
@@ -828,7 +842,7 @@ function EditTaskModal({
                       />
                       <label
                         htmlFor="comment-attachment"
-                        className="p-3 pl-4 text-[#8696a0] hover:text-[#e9edef] cursor-pointer transition-colors"
+                        className="p-3 pl-4 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
                       >
                         <Paperclip className="w-5 h-5" />
                       </label>
@@ -842,30 +856,23 @@ function EditTaskModal({
                           }
                         }}
                         placeholder="Mensagem ou anotação..."
-                        className="flex-1 max-h-32 min-h-[44px] bg-transparent py-3 pr-4 text-sm text-[#e9edef] placeholder:text-[#8696a0] focus:outline-none resize-none custom-scrollbar"
+                        className="flex-1 max-h-32 min-h-[44px] bg-transparent py-3 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none resize-none custom-scrollbar"
                       />
                     </div>
                     <button
                       type="button"
                       onClick={handleSendComment}
                       disabled={!newComment.trim()}
-                      className="w-11 h-11 shrink-0 bg-[#00a884] hover:bg-[#008f6f] disabled:bg-[#00a884]/50 disabled:cursor-not-allowed rounded-full flex items-center justify-center text-white transition-colors shadow-sm"
+                      className="w-11 h-11 shrink-0 bg-primary hover:bg-primary/90 disabled:bg-primary/40 disabled:cursor-not-allowed rounded-full flex items-center justify-center text-primary-foreground transition-all shadow-lg shadow-primary/20 active:scale-95"
                     >
                       <svg
                         viewBox="0 0 24 24"
                         height="20"
                         width="20"
                         preserveAspectRatio="xMidYMid meet"
-                        className=""
-                        version="1.1"
-                        x="0px"
-                        y="0px"
-                        enableBackground="new 0 0 24 24"
+                        fill="currentColor"
                       >
-                        <path
-                          fill="currentColor"
-                          d="M1.101,21.757L23.8,12.028L1.101,2.3l0.011,7.912l13.623,1.816L1.112,13.845 L1.101,21.757z"
-                        ></path>
+                        <path d="M1.101,21.757L23.8,12.028L1.101,2.3l0.011,7.912l13.623,1.816L1.112,13.845 L1.101,21.757z" />
                       </svg>
                     </button>
                   </div>
@@ -888,28 +895,53 @@ function EditTaskModal({
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {[...(task.attachments || []), ...localAttachments].map(
-                        (att, idx) => (
-                          <div
-                            key={idx}
-                            className="bg-card rounded-2xl p-4 border border-border/60 flex flex-col items-center text-center gap-3 shadow-lg hover:border-primary/30 transition-all hover:scale-[1.02] group relative overflow-hidden"
+                      {(task.attachments || []).map((att: any, idx) => (
+                        <div
+                          key={idx}
+                          className="bg-card rounded-2xl p-4 border border-border/60 flex flex-col items-center text-center gap-3 shadow-lg hover:border-primary/30 transition-all hover:scale-[1.02] group relative overflow-hidden"
+                        >
+                          {/* Botão de Excluir Anexo */}
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              const updatedAttachments =
+                                task.attachments?.filter((_, i) => i !== idx) ||
+                                [];
+
+                              // Atualização otimista
+                              if (onSaveAttachments) {
+                                onSaveAttachments(task.id, updatedAttachments);
+                              }
+
+                              // Persistência no Banco
+                              await supabase
+                                .from("tasks")
+                                .update({ attachments: updatedAttachments })
+                                .eq("id", task.id);
+
+                              toast.info("Anexo removido do projeto");
+                            }}
+                            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white z-10"
+                            title="Remover anexo"
                           >
-                            <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                              <FileSpreadsheet size={24} />
-                            </div>
-                            <span
-                              className="text-xs font-bold text-foreground truncate w-full"
-                              title={att}
-                            >
-                              {att}
-                            </span>
-                            <span className="text-[9px] uppercase tracking-widest text-muted-foreground font-semibold">
-                              Arquivo
-                            </span>
+                            <X size={14} />
+                          </button>
+
+                          <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                          <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                            <FileSpreadsheet size={24} />
                           </div>
-                        ),
-                      )}
+                          <span
+                            className="text-xs font-bold text-foreground truncate w-full"
+                            title={att}
+                          >
+                            {att}
+                          </span>
+                          <span className="text-[9px] uppercase tracking-widest text-muted-foreground font-semibold">
+                            Arquivo
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -920,14 +952,29 @@ function EditTaskModal({
                     id="attachment-upload"
                     className="hidden"
                     multiple
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       if (e.target.files && e.target.files.length > 0) {
                         const newFiles = Array.from(e.target.files).map(
                           (f) => f.name,
                         );
-                        setLocalAttachments((prev) => [...prev, ...newFiles]);
+                        const updatedAttachments = [
+                          ...(task.attachments || []),
+                          ...newFiles,
+                        ];
+
+                        // Atualização Otimista local
+                        if (onSaveAttachments) {
+                          onSaveAttachments(task.id, updatedAttachments);
+                        }
+
+                        // Persistência no Banco
+                        await supabase
+                          .from("tasks")
+                          .update({ attachments: updatedAttachments })
+                          .eq("id", task.id);
+
                         toast.success(
-                          `${newFiles.length} arquivo(s) adicionado(s)`,
+                          `${newFiles.length} arquivo(s) anexado(s) com sucesso!`,
                         );
                       }
                     }}
@@ -994,40 +1041,93 @@ export function Projects({ profile }: { profile?: any }) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [userAuth, setUserAuth] = useState<any>(null);
+  const [teamOwnerId, setTeamOwnerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data?.user) {
-        setUserAuth(data.user);
-        fetchTasks(data.user.id);
-      } else {
-        setLoading(false);
+    if (profile?.id) {
+      resolveTeamAndFetch();
+    }
+    // Recarrega quando o admin_id mudar (carregamento assíncrono do perfil)
+  }, [profile?.id, profile?.admin_id]);
+
+  const resolveTeamAndFetch = async () => {
+    setLoading(true);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      setUserAuth(user);
+
+      // Se é membro (tem admin_id), usa o admin como dono dos dados
+      let ownerId = profile?.id || user.id;
+      if (profile?.admin_id) {
+        ownerId = profile.admin_id;
       }
-    });
-  }, []);
+      setTeamOwnerId(ownerId);
+      await fetchTasks(ownerId);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!teamOwnerId) return;
+
+    const channel = supabase
+      .channel("projects-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "tasks",
+          filter: `user_id=eq.${teamOwnerId}`,
+        },
+        () => {
+          fetchTasks(teamOwnerId);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [teamOwnerId]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
 
-  const fetchTasks = async (userId: string) => {
-    setLoading(true);
-    let query = supabase
-      .from("tasks")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (profile?.role !== "super_admin") query = query.eq("user_id", userId);
-    const { data, error } = await query;
+  const fetchTasks = async (ownerId: string) => {
+    let query = supabase.from("tasks").select("*");
+
+    if (profile?.admin_id) {
+      // Modo Equipe: Vê os projetos da equipe (onde user_id = admin_id)
+      query = query.eq("user_id", profile.admin_id);
+    } else {
+      // Modo Independente: Vê os que possuem seu user_id ou que você criou
+      query = query.or(`user_id.eq.${ownerId},created_by.eq.${ownerId}`);
+    }
+
+    const { data, error } = await query.order("created_at", {
+      ascending: false,
+    });
+
     if (error) toast.error("Erro ao carregar projetos.");
     else if (data) setTasks(data);
-    setLoading(false);
   };
 
   const handleCreateTask = async (newT: Task) => {
-    if (!userAuth) return;
+    const ownerId = teamOwnerId || profile?.id;
+    if (!ownerId) return;
     const { id, ...taskWithoutId } = newT;
-    const dbTask = { ...taskWithoutId, user_id: userAuth.id };
+    const dbTask = {
+      ...taskWithoutId,
+      user_id: ownerId,
+      created_by: profile?.id,
+    };
     setTasks([newT, ...tasks]);
     const { data, error } = await supabase
       .from("tasks")
@@ -1040,6 +1140,16 @@ export function Projects({ profile }: { profile?: any }) {
     } else if (data) {
       toast.success("Projeto criado!");
       setTasks((prev) => prev.map((t) => (t.id === newT.id ? data : t)));
+
+      // Envia notificação global
+      supabase
+        .from("sys_notifications")
+        .insert({
+          title: "Novo Projeto",
+          message: `${profile?.full_name || "Alguém"} acabou de criar o projeto: "${newT.title}"`,
+          type: "project",
+        })
+        .then();
     }
   };
 
@@ -1156,6 +1266,16 @@ export function Projects({ profile }: { profile?: any }) {
         onClose={() => setEditingTask(null)}
         onSave={handleUpdateTask}
         onDelete={handleDelete}
+        onSaveAttachments={(taskId, newAttachments) => {
+          setTasks((prev) =>
+            prev.map((t) =>
+              t.id === taskId ? { ...t, attachments: newAttachments } : t,
+            ),
+          );
+          if (editingTask && editingTask.id === taskId) {
+            setEditingTask({ ...editingTask, attachments: newAttachments });
+          }
+        }}
         onSaveComment={(taskId, newComments) => {
           setTasks((prev) =>
             prev.map((t) =>
