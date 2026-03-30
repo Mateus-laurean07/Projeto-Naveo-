@@ -447,9 +447,9 @@ export function Reports({ profile }: { profile?: any }) {
               Operação Ágil
             </span>
           </div>
-          <h1 className="text-3xl lg:text-5xl font-black tracking-tighter text-foreground mb-4 uppercase">
+          <h1 className="text-3xl lg:text-5xl font-black tracking-tight text-foreground mb-4 uppercase">
             Central de{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-emerald-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-emerald-400 pr-2 pb-1">
               Relatórios
             </span>
           </h1>
