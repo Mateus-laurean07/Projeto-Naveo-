@@ -112,9 +112,13 @@ export function Header({
 
     const fetchSysNotifications = async () => {
       try {
+        const fiveDaysAgo = new Date();
+        fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+
         const { data, error } = await supabase
           .from("sys_notifications")
           .select("*")
+          .gte("created_at", fiveDaysAgo.toISOString())
           .order("created_at", { ascending: false })
           .limit(20);
 
