@@ -433,120 +433,123 @@ export function Reports({ profile }: { profile?: any }) {
 
   return (
     <div className="space-y-8 flex flex-col animate-fade-in-up pb-8 overflow-y-auto w-full h-full lg:h-[calc(100vh-80px)] custom-scrollbar">
-      <div className="flex flex-col lg:flex-row gap-6 mb-2 shrink-0">
-        <div className="flex-1 relative overflow-hidden flex justify-between items-center bg-card p-8 rounded-3xl border border-border shadow-xl">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-accent/20 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
-          <div
-            className="absolute bottom-0 left-0 w-64 h-64 bg-accent/10 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse"
-            style={{ animationDelay: "2s" }}
-          ></div>
+      <div className="flex-shrink-0 relative overflow-hidden bg-card p-6 lg:p-10 rounded-[2.5rem] border border-border/50 shadow-2xl flex flex-col lg:flex-row justify-between items-center gap-8">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-accent/10 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
+        <div
+          className="absolute bottom-0 left-0 w-80 h-80 bg-primary/10 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse"
+          style={{ animationDelay: "2s" }}
+        ></div>
 
-          <div className="relative z-10">
-            <h1 className="text-4xl font-extrabold tracking-tight text-foreground mb-3 max-w-xl">
-              Central de{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-emerald-400">
-                Relatórios
-              </span>
-            </h1>
-            <p className="text-muted-foreground text-base max-w-md leading-relaxed">
-              Acompanhe o status e progrida com seus relatórios em um quadro
-              ágil de alto desempenho.
-            </p>
+        <div className="relative z-10 text-center lg:text-left flex-1">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 mb-4">
+            <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-accent">
+              Operação Ágil
+            </span>
           </div>
+          <h1 className="text-3xl lg:text-5xl font-black tracking-tighter text-foreground mb-4 uppercase">
+            Central de{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-emerald-400">
+              Relatórios
+            </span>
+          </h1>
+          <p className="text-muted-foreground text-sm lg:text-base max-w-xl leading-relaxed font-medium">
+            Gerencie o progresso e a performance de cada entrega em um quadro
+            tático de alta visibilidade.
+          </p>
         </div>
 
-        <Dialog.Root open={open} onOpenChange={setOpen}>
-          <Dialog.Trigger asChild>
-            <button className="flex-shrink-0 group relative overflow-hidden bg-primary text-primary-foreground px-8 py-4 rounded-2xl flex items-center justify-center gap-4 font-black transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-primary/20 w-full lg:w-auto min-w-[240px] uppercase tracking-widest text-xs">
-              <div className="w-8 h-8 rounded-xl bg-primary-foreground/20 flex items-center justify-center transition-transform group-hover:rotate-90 duration-500">
-                <Plus className="w-5 h-5" />
-              </div>
-              <span>Novo Relatório</span>
-              <div className="absolute inset-x-0 bottom-0 h-1 bg-white/20 scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-500" />
-            </button>
-          </Dialog.Trigger>
-          <Dialog.Portal>
-            <Dialog.Overlay className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 animate-fade-in" />
-            <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-background/95 backdrop-blur-2xl rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-border z-50 animate-fade-in-up flex flex-col overflow-hidden">
-              <div className="flex justify-between items-center p-6 border-b border-border/50 bg-gradient-to-r from-transparent to-white/5">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center border border-accent/30">
-                    <Plus className="w-4 h-4 text-accent" />
+        <div className="relative z-10 flex-shrink-0">
+          <Dialog.Root open={open} onOpenChange={setOpen}>
+            <Dialog.Trigger asChild>
+              <button className="group relative bg-primary text-primary-foreground px-8 py-4 rounded-2xl flex items-center gap-3 font-black transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-primary/30 uppercase tracking-[0.15em] text-[11px]">
+                <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-500" />
+                <span>Novo Relatório</span>
+              </button>
+            </Dialog.Trigger>
+            <Dialog.Portal>
+              <Dialog.Overlay className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 animate-fade-in" />
+              <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-background/95 backdrop-blur-2xl rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-border z-50 animate-fade-in-up flex flex-col overflow-hidden">
+                <div className="flex justify-between items-center p-6 border-b border-border/50 bg-gradient-to-r from-transparent to-white/5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center border border-accent/30">
+                      <Plus className="w-4 h-4 text-accent" />
+                    </div>
+                    <Dialog.Title className="text-xl font-extrabold text-foreground">
+                      Criar Relatório
+                    </Dialog.Title>
                   </div>
-                  <Dialog.Title className="text-xl font-extrabold text-foreground">
-                    Criar Relatório
-                  </Dialog.Title>
-                </div>
-                <Dialog.Close asChild>
-                  <button className="text-muted-foreground hover:text-foreground transition-colors bg-foreground/5 p-2 rounded-full hover:bg-foreground/10 hover:rotate-90 duration-200">
-                    <X className="w-4 h-4" />
-                  </button>
-                </Dialog.Close>
-              </div>
-              <form onSubmit={handleCreate} className="p-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-foreground/80 mb-2">
-                    Título / Assunto
-                  </label>
-                  <input
-                    name="title"
-                    type="text"
-                    placeholder="Ex: Relatório Mensal"
-                    className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-foreground focus:outline-none focus:border-accent"
-                    required
-                    autoFocus
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground/80 mb-2">
-                    Descrição
-                  </label>
-                  <textarea
-                    name="description"
-                    rows={3}
-                    placeholder="Detalhes do que deve ser feito"
-                    className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-foreground focus:outline-none focus:border-accent resize-y"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground/80 mb-2">
-                    Nome do Responsável
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <input
-                      name="assignee"
-                      type="text"
-                      placeholder="Ex: Responsável"
-                      className="w-full bg-background border border-border rounded-xl py-2.5 pl-10 pr-4 text-foreground focus:outline-none focus:border-accent"
-                    />
-                  </div>
-                  <p className="text-[10px] text-muted-foreground mt-1">
-                    Uma foto de perfil será gerada baseada no nome usando o
-                    e-mail/sistema.
-                  </p>
-                </div>
-
-                <div className="mt-8 flex justify-end gap-3 pt-4 border-t border-border/50">
                   <Dialog.Close asChild>
-                    <button
-                      type="button"
-                      className="px-5 py-2.5 rounded-xl font-medium text-foreground/80 bg-background border border-border hover:bg-foreground/5 transition-colors"
-                    >
-                      Cancelar
+                    <button className="text-muted-foreground hover:text-foreground transition-colors bg-foreground/5 p-2 rounded-full hover:bg-foreground/10 hover:rotate-90 duration-200">
+                      <X className="w-4 h-4" />
                     </button>
                   </Dialog.Close>
-                  <button
-                    type="submit"
-                    className="bg-accent hover:bg-accent/80 text-foreground px-8 py-2.5 rounded-xl font-medium transition-all shadow-lg hover:shadow-accent/20"
-                  >
-                    Criar e Prosseguir
-                  </button>
                 </div>
-              </form>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog.Root>
+                <form onSubmit={handleCreate} className="p-6 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground/80 mb-2">
+                      Título / Assunto
+                    </label>
+                    <input
+                      name="title"
+                      type="text"
+                      placeholder="Ex: Relatório Mensal"
+                      className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-foreground focus:outline-none focus:border-accent"
+                      required
+                      autoFocus
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground/80 mb-2">
+                      Descrição
+                    </label>
+                    <textarea
+                      name="description"
+                      rows={3}
+                      placeholder="Detalhes do que deve ser feito"
+                      className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-foreground focus:outline-none focus:border-accent resize-y"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground/80 mb-2">
+                      Nome do Responsável
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <input
+                        name="assignee"
+                        type="text"
+                        placeholder="Ex: Responsável"
+                        className="w-full bg-background border border-border rounded-xl py-2.5 pl-10 pr-4 text-foreground focus:outline-none focus:border-accent"
+                      />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Uma foto de perfil será gerada baseada no nome usando o
+                      e-mail/sistema.
+                    </p>
+                  </div>
+
+                  <div className="mt-8 flex justify-end gap-3 pt-4 border-t border-border/50">
+                    <Dialog.Close asChild>
+                      <button
+                        type="button"
+                        className="px-5 py-2.5 rounded-xl font-medium text-foreground/80 bg-background border border-border hover:bg-foreground/5 transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                    </Dialog.Close>
+                    <button
+                      type="submit"
+                      className="bg-accent hover:bg-accent/80 text-foreground px-8 py-2.5 rounded-xl font-medium transition-all shadow-lg hover:shadow-accent/20"
+                    >
+                      Criar e Prosseguir
+                    </button>
+                  </div>
+                </form>
+              </Dialog.Content>
+            </Dialog.Portal>
+          </Dialog.Root>
+        </div>
 
         <Dialog.Root
           open={!!editingItem}
