@@ -11,9 +11,14 @@ import {
   ChevronRight,
   BarChart3,
   ShieldCheck,
+  Rocket,
+  ListChecks,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { supabase } from "../lib/supabase";
+import { TridentLogo } from "./Logo";
+import { useTheme } from "./ThemeProvider";
 
 interface SidebarProps {
   activeTab: string;
@@ -23,33 +28,6 @@ interface SidebarProps {
   profile?: any;
 }
 
-// Representing Neptune with custom Trident SVG for a premium logo
-const TridentLogo = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={cn(className)}>
-    <defs>
-      <linearGradient id="trident-sidebar" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stopColor="#FDE68A" />
-        <stop offset="100%" stopColor="#D4AF37" />
-      </linearGradient>
-    </defs>
-    <g fill="#000" stroke="url(#trident-sidebar)" strokeWidth="0.2">
-      <path d="M12 1L13.8 7L12 8.5L10.2 7L12 1Z" />
-      <path d="M12 9.5C12 9.5 13.5 10 15 10C16.5 10 18.5 8.5 19.5 4.5L16 9C15.5 10 14.5 11 12.5 11.5L11.5 11.5C9.5 11 8.5 10 8 9L4.5 4.5C5.5 8.5 7.5 10 9 10C10.5 10 12 9.5 12 9.5Z" />
-      <circle cx="12" cy="11.5" r="1.5" fill="none" />
-    </g>
-    <rect
-      x="11.5"
-      y="11.8"
-      width="1"
-      height="11"
-      rx="0.3"
-      fill="#000"
-      stroke="url(#trident-sidebar)"
-      strokeWidth="0.1"
-    />
-  </svg>
-);
-
 export function Sidebar({
   activeTab,
   setTab,
@@ -57,7 +35,17 @@ export function Sidebar({
   setCollapsed,
   profile,
 }: SidebarProps) {
+  const { theme } = useTheme();
   const isSuperAdmin = profile?.role === "super_admin";
+  const [expandedMenus, setExpandedMenus] = React.useState<string[]>([
+    "projects",
+  ]);
+
+  const toggleMenu = (id: string) => {
+    setExpandedMenus((prev) =>
+      prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id],
+    );
+  };
 
   const mainMenuItems = [
     {
@@ -68,9 +56,19 @@ export function Sidebar({
     },
     { id: "customers", label: "Clientes", icon: Users, allowed: true },
     { id: "crm", label: "Pipeline", icon: BarChart3, allowed: true },
-    { id: "projects", label: "Projetos", icon: Briefcase, allowed: true },
+    {
+      id: "projects_group",
+      label: "Projetos",
+      icon: Briefcase,
+      allowed: true,
+      subItems: [
+        { id: "projects", label: "Gestão", icon: Briefcase },
+        { id: "tasks", label: "Tarefas", icon: ListChecks },
+      ],
+    },
     { id: "agenda", label: "Agenda", icon: Calendar, allowed: true },
     { id: "reports", label: "Relatórios", icon: FileText, allowed: true },
+    { id: "tunoo", label: "Tunoo", icon: Rocket, allowed: true },
   ];
 
   const adminMenuItems = [
@@ -100,8 +98,13 @@ export function Sidebar({
             className="flex items-center gap-3 group cursor-pointer"
             onClick={() => setTab("dashboard")}
           >
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform duration-300 animate-lime-pulse">
-              <TridentLogo className="w-7 h-7 text-primary-foreground" />
+            <div
+              className={cn(
+                "w-12 h-12 flex items-center justify-center rounded-xl overflow-hidden transition-all duration-300 group-hover:scale-110",
+                theme === "dark" ? "bg-primary" : "bg-[#1a7efb]"
+              )}
+            >
+              <TridentLogo className="w-full h-full" />
             </div>
             <div className="flex flex-col">
               <span className="font-black text-2xl tracking-tighter text-foreground leading-none lime-glow-text">
@@ -126,36 +129,93 @@ export function Sidebar({
       <nav className="flex-1 px-4 space-y-1 mt-4 overflow-y-auto custom-scrollbar">
         {mainMenuItems
           .filter((i) => i.allowed)
-          .map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setTab(item.id)}
-              className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group relative overflow-hidden",
-                activeTab === item.id
-                  ? "bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20 sidebar-item-active"
-                  : "text-muted-foreground hover:bg-primary/5 hover:text-primary hover:translate-x-1",
-              )}
-            >
-              {activeTab === item.id && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-primary rounded-r-full shadow-sm" />
-              )}
-              <item.icon
-                size={20}
-                className={cn(
-                  "shrink-0 transition-all duration-300",
-                  activeTab === item.id
-                    ? "scale-110 text-primary"
-                    : "group-hover:scale-110 group-hover:text-primary",
+          .map((item) => {
+            const isExpanded = expandedMenus.includes(item.id);
+            const hasSubItems = !!(item as any).subItems;
+            const subItems = (item as any).subItems || [];
+            const isAnySubActive = subItems.some(
+              (s: any) => s.id === activeTab,
+            );
+
+            return (
+              <div key={item.id} className="space-y-1">
+                <button
+                  onClick={() => {
+                    if (hasSubItems) {
+                      toggleMenu(item.id);
+                    } else {
+                      setTab(item.id);
+                    }
+                  }}
+                  className={cn(
+                    "w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all duration-300 group relative overflow-hidden",
+                    activeTab === item.id || (hasSubItems && isAnySubActive)
+                      ? "bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20 sidebar-item-active font-black"
+                      : "text-muted-foreground hover:bg-primary/5 hover:text-primary hover:translate-x-1",
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    {activeTab === item.id && (
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-primary rounded-r-full shadow-sm" />
+                    )}
+                    <item.icon
+                      size={20}
+                      className={cn(
+                        "shrink-0 transition-all duration-300",
+                        activeTab === item.id || (hasSubItems && isAnySubActive)
+                          ? "scale-110 text-primary"
+                          : "group-hover:scale-110 group-hover:text-primary",
+                      )}
+                    />
+                    {!collapsed && (
+                      <span className="font-bold text-[14px] tracking-tight">
+                        {item.label}
+                      </span>
+                    )}
+                  </div>
+                  {hasSubItems && !collapsed && (
+                    <ChevronDown
+                      size={16}
+                      className={cn(
+                        "transition-transform duration-500 opacity-40 group-hover:opacity-100",
+                        isExpanded && "rotate-180",
+                      )}
+                    />
+                  )}
+                </button>
+
+                {/* Sub Menu Rendering */}
+                {hasSubItems && isExpanded && !collapsed && (
+                  <div className="ml-9 space-y-1 animate-in slide-in-from-top-2 duration-300">
+                    {subItems.map((sub: any) => (
+                      <button
+                        key={sub.id}
+                        onClick={() => setTab(sub.id)}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 group text-xs",
+                          activeTab === sub.id
+                            ? "text-primary font-black"
+                            : "text-muted-foreground hover:text-primary hover:translate-x-1",
+                        )}
+                      >
+                        <sub.icon
+                          size={14}
+                          className={cn(
+                            activeTab === sub.id
+                              ? "text-primary"
+                              : "text-muted-foreground/40 group-hover:text-primary",
+                          )}
+                        />
+                        <span className="tracking-tight uppercase font-medium">
+                          {sub.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
                 )}
-              />
-              {!collapsed && (
-                <span className="font-bold text-[14px] tracking-tight">
-                  {item.label}
-                </span>
-              )}
-            </button>
-          ))}
+              </div>
+            );
+          })}
 
         {isSuperAdmin && !collapsed && (
           <div className="pt-6 pb-2 px-4 flex items-center gap-2">
@@ -198,7 +258,7 @@ export function Sidebar({
             key={item.id}
             onClick={() => setTab(item.id)}
             className={cn(
-              "w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group mb-1.5",
+              "w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group mb-1.5 relative",
               activeTab === item.id
                 ? "bg-primary/10 text-primary ring-1 ring-primary/20 shadow-lg shadow-primary/5"
                 : "text-muted-foreground hover:bg-primary/5 hover:text-primary",

@@ -12,6 +12,11 @@ import { Reports } from "./Reports";
 import { Settings } from "./Settings";
 import { AdminPanel } from "./AdminPanel";
 import { LoadingScreen } from "./LoadingScreen";
+import { Tasks } from "./Tasks";
+import { Tunoo } from "./Tunoo";
+import { IdleScreen } from "./IdleScreen";
+import { toast } from "sonner";
+import { cn } from "../lib/utils";
 
 interface ApplicationProps {
   session?: any;
@@ -23,13 +28,14 @@ export function Application({ session }: ApplicationProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [isPageLoading, setIsPageLoading] = useState(true);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   // Efeito para simular carregamento fluido apenas em abas específicas
   const handleTabChange = (newTab: string) => {
     if (newTab === currentTab) return;
 
-    // Só mostra o Tsunami para "dashboard" (Visão Geral) e "admin" (Painel Master)
-    const shouldShowTsunami = newTab === "dashboard" || newTab === "admin";
+    // Só mostra o Tsunami para "dashboard", "admin" e agora "tunoo"
+    const shouldShowTsunami = newTab === "dashboard" || newTab === "admin" || newTab === "tunoo";
 
     if (shouldShowTsunami) {
       setIsPageLoading(true);
@@ -199,6 +205,7 @@ export function Application({ session }: ApplicationProps) {
   return (
     <ThemeProvider>
       {isPageLoading && <LoadingScreen />}
+      <IdleScreen />
 
       <div className="flex h-screen bg-background overflow-hidden selection:bg-primary/30 selection:text-white transition-colors duration-700">
         {/* Deep Ocean / Netuno Glow background highlights */}
@@ -207,26 +214,47 @@ export function Application({ session }: ApplicationProps) {
           <div className="absolute bottom-[-15%] right-[-10%] w-[50%] h-[50%] bg-primary/20 rounded-full blur-[180px] opacity-30 dark:opacity-10" />
         </div>
 
-        <Sidebar
-          activeTab={currentTab}
-          setTab={handleTabChange}
-          collapsed={collapsed}
-          setCollapsed={setCollapsed}
-          profile={profile}
-        />
+        {currentTab !== "tunoo" && (
+          <Sidebar
+            activeTab={currentTab}
+            setTab={handleTabChange}
+            collapsed={collapsed}
+            setCollapsed={setCollapsed}
+            profile={profile}
+          />
+        )}
 
         <div className="flex-1 flex flex-col min-w-0 bg-background/5 backdrop-blur-[100px] overflow-hidden z-10 transition-colors duration-700">
-          <Header profile={profile} />
-          <main className="flex-1 overflow-y-auto custom-scrollbar relative">
-            <div className="p-6 max-w-[1800px] 2xl:max-w-[95%] mx-auto space-y-6 animate-fade-in-up">
+          {currentTab !== "tunoo" && <Header profile={profile} setTab={handleTabChange} />}
+          <main className={cn("flex-1 relative overflow-hidden", currentTab !== "tunoo" && "overflow-y-auto custom-scrollbar")}>
+            <div className={cn(
+              "mx-auto space-y-6 animate-fade-in-up h-full",
+              currentTab !== "tunoo" ? "p-6 max-w-[1800px] 2xl:max-w-[95%]" : "p-0 max-w-none"
+            )}>
               {currentTab === "dashboard" && (
                 <Dashboard setTab={handleTabChange} profile={profile} />
               )}
               {currentTab === "customers" && <Customers profile={profile} />}
               {currentTab === "crm" && <CRM profile={profile} />}
-              {currentTab === "projects" && <Projects profile={profile} />}
+              {currentTab === "projects" && (
+                <Projects 
+                  profile={profile} 
+                  onNavigateToTask={(taskId) => {
+                    setSelectedTaskId(taskId);
+                    handleTabChange("tasks");
+                  }} 
+                />
+              )}
+              {currentTab === "tasks" && (
+                <Tasks 
+                  profile={profile} 
+                  initialTaskId={selectedTaskId} 
+                  onTaskOpened={() => setSelectedTaskId(null)} 
+                />
+              )}
               {currentTab === "agenda" && <Agenda profile={profile} />}
               {currentTab === "reports" && <Reports profile={profile} />}
+              {currentTab === "tunoo" && <Tunoo profile={profile} setTab={handleTabChange} />}
               {currentTab === "settings" && <Settings profile={profile} />}
               {currentTab === "admin" && isSuperAdmin && (
                 <AdminPanel profile={profile} />

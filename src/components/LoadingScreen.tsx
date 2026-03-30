@@ -1,63 +1,13 @@
 import React from "react";
 import { cn } from "../lib/utils";
-
-const TridentLogo = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={cn(className)}>
-    <defs>
-      <linearGradient id="trident-fill" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stopColor="#FDE68A" />
-        <stop offset="100%" stopColor="#D4AF37" />
-      </linearGradient>
-    </defs>
-
-    {/* Corpo Unificado do Tridente (High Detail) */}
-    <g fill="#000" stroke="url(#trident-fill)" strokeWidth="0.2">
-      {/* Lâmina Central */}
-      <path d="M12 1L13.8 7L12 8.5L10.2 7L12 1Z" />
-
-      {/* Lâminas Laterais e Cabeça (Forma integrada) */}
-      <path d="M12 9.5C12 9.5 13.5 10 15 10C16.5 10 18.5 8.5 19.5 4.5L16 9C15.5 10 14.5 11 12.5 11.5L11.5 11.5C9.5 11 8.5 10 8 9L4.5 4.5C5.5 8.5 7.5 10 9 10C10.5 10 12 9.5 12 9.5Z" />
-
-      {/* Ornamentos de Transição */}
-      <circle cx="12" cy="11.5" r="1.5" className="animate-pulse-inner" />
-    </g>
-
-    {/* Cabo Integrado (Solid Black with Gold edge) */}
-    <rect
-      x="11.5"
-      y="11.8"
-      width="1"
-      height="11"
-      rx="0.3"
-      fill="#000"
-      stroke="url(#trident-fill)"
-      strokeWidth="0.1"
-    />
-
-    {/* Detalhes de Aço no Cabo */}
-    <rect
-      x="11.3"
-      y="14"
-      width="1.4"
-      height="0.4"
-      rx="0.1"
-      fill="url(#trident-fill)"
-    />
-    <rect
-      x="11.3"
-      y="18"
-      width="1.4"
-      height="0.4"
-      rx="0.1"
-      fill="url(#trident-fill)"
-    />
-  </svg>
-);
+import { TridentLogo } from "./Logo";
+import { useTheme } from "./ThemeProvider";
 
 /**
  * LoadingScreen - Cinematic Premium Experience
  */
 export function LoadingScreen() {
+  const { theme } = useTheme();
   return (
     <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center loading-bg-deep overflow-hidden">
       {/* Atmosfera Subaquática (Ciclone de energia teal) */}
@@ -84,26 +34,40 @@ export function LoadingScreen() {
 
       <div className="relative flex flex-col items-center gap-12 z-20">
         {/* Logo do Tridente (Design Unificado & Sombra Premium) */}
-        <div className="relative animate-bounce-slow trident-premium-glow">
-          <TridentLogo className="w-56 h-56" />
-
-          {/* Pulsação de Energia atrás do Tridente */}
-          <div className="absolute inset-0 bg-primary/5 rounded-full blur-[80px] animate-pulse pointer-events-none" />
+        <div
+          className={cn(
+            "relative animate-bounce-slow flex items-center justify-center rounded-[4.5rem] shadow-2xl overflow-hidden",
+            theme === "dark" ? "bg-primary shadow-primary/20" : "bg-[#1a7efb] shadow-blue-500/20"
+          )}
+          style={{ width: 256, height: 256 }}
+        >
+          <TridentLogo className="w-full h-full" />
         </div>
 
         <div className="flex flex-col items-center gap-4">
           <div className="flex flex-col items-center">
-            <h3 className="text-2xl font-black uppercase tracking-[1em] text-white/90 mb-2 translate-x-[0.5em]">
+            <h3 className={cn(
+              "text-3xl font-black uppercase tracking-[1em] mb-2 translate-x-[0.5em]",
+              theme === "dark"
+                ? "text-primary drop-shadow-[0_0_20px_hsl(var(--primary)/0.4)]"
+                : "text-[#1a7efb] drop-shadow-[0_0_20px_rgba(26,126,251,0.4)]"
+            )}>
               Netuno
             </h3>
-            <div className="h-[1px] w-48 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+            <div className={cn(
+              "h-[1px] w-64 bg-gradient-to-r from-transparent to-transparent",
+              theme === "dark" ? "via-primary/50" : "via-[#1a7efb]/50"
+            )} />
           </div>
           <div className="flex items-center gap-3">
-            <span className="w-1 h-1 bg-primary rounded-full animate-ping" />
-            <p className="text-[10px] font-bold text-primary/60 uppercase tracking-[0.5em]">
-              Despertando o Oceano
+            <span className={cn("w-1.5 h-1.5 rounded-full animate-ping", theme === "dark" ? "bg-primary" : "bg-[#1a7efb]")} />
+            <p className={cn(
+              "text-[10px] font-bold uppercase tracking-[0.8em]",
+              theme === "dark" ? "text-primary/60" : "text-[#1a7efb]/60"
+            )}>
+              Despertando a Inteligência
             </p>
-            <span className="w-1 h-1 bg-primary rounded-full animate-ping delay-300" />
+            <span className={cn("w-1.5 h-1.5 rounded-full animate-ping delay-300", theme === "dark" ? "bg-primary" : "bg-[#1a7efb]")} />
           </div>
         </div>
       </div>

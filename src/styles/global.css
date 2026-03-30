@@ -75,55 +75,65 @@
     }
   }
 
+  @keyframes wobble {
+    0%,
+    100% {
+      transform: rotate(-3deg);
+    }
+    50% {
+      transform: rotate(3deg);
+    }
+  }
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
   --animate-fade-in-up: fade-in-up 0.3s ease-out;
   --animate-fade-in: fade-in 0.2s ease-out;
+  --animate-wobble: wobble 2s infinite ease-in-out;
 }
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 47.4% 11.2%;
-    --card: 0 0% 98%;
+    --background: 210 40% 96.1%; /* Branco mais escuro (Soft Slate/Off-white #F1F5F9) */
+    --foreground: 222.2 47.4% 11.2%; /* Slate 950 para texto */
+    --card: 0 0% 100%; /* Cards brancos sobre o fundo cinza dão destaque real */
     --card-foreground: 222.2 47.4% 11.2%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 47.4% 11.2%;
-    --primary: 213 96.6% 54.3%;
+    --primary: 199 89% 55%; /* Azul mais leve e amigável (Sky Blue #4FB6EA) */
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
+    --muted: 210 40% 90%; /* Slate 200 para áreas desativadas */
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 213 96.6% 54.3%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 199 89% 55%;
+    --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 213 96.6% 54.3%;
-    --radius: 0.5rem;
+    --border: 214.3 31.8% 85%; /* Borda mais presente mas suave */
+    --input: 214.3 31.8% 85%;
+    --ring: 199 89% 55%;
+    --radius: 0.75rem;
   }
 
   .dark {
-    --background: 240 10% 2%;
+    --background: 231 22% 11%; /* #161824 Naveo Background */
     --foreground: 210 40% 98%;
-    --card: 240 10% 5%;
+    --card: 210 11% 15%; /* #212529 Naveo Card */
     --card-foreground: 210 40% 98%;
-    --popover: 240 10% 5%;
+    --popover: 210 11% 15%; /* #212529 Naveo Popover */
     --popover-foreground: 210 40% 98%;
-    --primary: 69 100% 48%;
+    --primary: 69 100% 48%; /* #d0f500 Naveo Lime */
     --primary-foreground: 240 10% 4%;
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 213 96% 54%; /* #1a7efb Naveo Accent Blue */
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
+    --muted: 220 10% 20%;
     --muted-foreground: 215.4 20.2% 65.1%;
-    --accent: 69 100% 48%;
+    --accent: 69 100% 48%; /* Keep lime for accents */
     --accent-foreground: 240 10% 4%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 0 0% 12%;
-    --input: 0 0% 12%;
+    --border: 220 10% 20%; /* Subtler border */
+    --input: 220 10% 20%;
     --ring: 69 100% 48%;
   }
 }

@@ -7,37 +7,31 @@ import {
   Search,
   User,
   CheckCircle2,
-  MessageSquare,
   LogOut,
   ChevronDown,
   Mail,
   FolderKanban,
+  X,
+  Eye,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { supabase } from "../lib/supabase";
+import * as Dialog from "@radix-ui/react-dialog";
 
-export function Header({ session, profile }: { session?: any; profile?: any }) {
+export function Header({
+  session,
+  profile,
+  setTab,
+}: {
+  session?: any;
+  profile?: any;
+  setTab?: (tab: string) => void;
+}) {
   const { theme, setTheme } = useTheme();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([
-    {
-      id: "1",
-      type: "lead",
-      title: "Novo lead recebido",
-      message: "Marcos Silva entrou em contato pela LP",
-      time: "Agora mesmo",
-      read: false,
-    },
-    {
-      id: "2",
-      type: "system",
-      title: "Atualização do sistema",
-      message: "Novos recursos disponíveis na plataforma",
-      time: "Há 2 horas",
-      read: false,
-    },
-  ]);
+  const [isAllModalOpen, setIsAllModalOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const notificationRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -62,11 +56,25 @@ export function Header({ session, profile }: { session?: any; profile?: any }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const handleNotificationAction = async (notif: any) => {
+    // Marca como lida no banco se for uma notificação do sistema
+    if (notif.type !== "invite") {
+      await supabase
+        .from("sys_notifications")
+        .update({ read: true })
+        .eq("id", notif.id);
+    }
+
+    // Navega se houver aba alvo
+    if (notif.target_tab && setTab) {
+      setTab(notif.target_tab);
+      setShowNotifications(false);
+      setIsAllModalOpen(false);
+    }
+  };
+
   const handleNotificationClick = () => {
     setShowNotifications(!showNotifications);
-    if (!showNotifications && hasUnread) {
-      setNotifications(notifications.map((n) => ({ ...n, read: true })));
-    }
   };
 
   useEffect(() => {
@@ -118,10 +126,14 @@ export function Header({ session, profile }: { session?: any; profile?: any }) {
               type: n.type || "system",
               title: n.title,
               message: n.message,
+              target_tab: n.target_tab,
+              target_id: n.target_id,
               time: n.created_at
-                ? new Date(n.created_at).toLocaleTimeString([], {
+                ? new Date(n.created_at).toLocaleDateString("pt-BR", {
                     hour: "2-digit",
                     minute: "2-digit",
+                    day: "2-digit",
+                    month: "2-digit",
                   })
                 : "Agora",
               read: n.read || false,
@@ -151,6 +163,8 @@ export function Header({ session, profile }: { session?: any; profile?: any }) {
               type: newN.type || "system",
               title: newN.title,
               message: newN.message,
+              target_tab: newN.target_tab,
+              target_id: newN.target_id,
               time: "Agora mesmo",
               read: false,
             },
@@ -243,46 +257,167 @@ export function Header({ session, profile }: { session?: any; profile?: any }) {
                 </span>
               </div>
               <div className="max-h-[350px] overflow-y-auto custom-scrollbar px-1 space-y-1">
-                {notifications.map((notif) => (
-                  <div
-                    key={notif.id}
-                    className="p-4 rounded-2xl border border-transparent hover:border-border/50 hover:bg-foreground/[0.03] flex gap-4 cursor-pointer group transition-all"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:scale-110 group-hover:bg-primary/20 transition-all border border-primary/10">
-                      {notif.type === "lead" ? (
-                        <User size={18} />
-                      ) : notif.type === "invite" ? (
-                        <Mail size={18} />
-                      ) : notif.type === "project" ? (
-                        <FolderKanban size={18} />
-                      ) : notif.type === "comment" ? (
-                        <MessageSquare size={18} />
-                      ) : (
-                        <CheckCircle2 size={18} />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-black text-foreground group-hover:text-primary transition-colors">
-                        {notif.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground line-clamp-1 leading-relaxed">
-                        {notif.message}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground/40 mt-1 uppercase font-black tracking-widest">
-                        {notif.time}
-                      </p>
-                    </div>
+                {notifications.length === 0 ? (
+                  <div className="py-12 text-center text-muted-foreground/40 font-black uppercase tracking-widest text-[10px]">
+                    Nenhuma Notificação
                   </div>
-                ))}
+                ) : (
+                  notifications.slice(0, 3).map((notif) => (
+                    <div
+                      key={notif.id}
+                      onClick={() => handleNotificationAction(notif)}
+                      className={cn(
+                        "p-4 rounded-2xl border border-transparent hover:border-border/50 hover:bg-foreground/[0.03] flex gap-4 cursor-pointer group transition-all relative",
+                        !notif.read && "bg-primary/5 border-primary/10",
+                      )}
+                    >
+                      {!notif.read && (
+                        <span className="absolute left-1 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-full shadow-[0_0_10px_hsl(var(--primary))]" />
+                      )}
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:scale-110 group-hover:bg-primary/20 transition-all border border-primary/10">
+                        {notif.type === "lead" ? (
+                          <User size={18} />
+                        ) : notif.type === "invite" ? (
+                          <Mail size={18} />
+                        ) : notif.type === "project" ||
+                          notif.type === "task" ? (
+                          <FolderKanban size={18} />
+                        ) : (
+                          <CheckCircle2 size={18} />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-black text-foreground group-hover:text-primary transition-colors">
+                          {notif.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground line-clamp-1 leading-relaxed">
+                          {notif.message}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground/40 mt-1 uppercase font-black tracking-widest">
+                          {notif.time}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
               <div className="p-3 text-center border-t border-border/20 mt-1">
-                <button className="text-[10px] font-black text-primary uppercase tracking-[0.2em] hover:opacity-70 transition-opacity">
+                <button
+                  onClick={() => {
+                    setShowNotifications(false);
+                    setIsAllModalOpen(true);
+                  }}
+                  className="text-[10px] font-black text-primary uppercase tracking-[0.2em] hover:opacity-70 transition-opacity"
+                >
                   Ver Todas Notificações
                 </button>
               </div>
             </div>
           )}
         </div>
+
+        {/* Modal de Todas as Notificações */}
+        <Dialog.Root open={isAllModalOpen} onOpenChange={setIsAllModalOpen}>
+          <Dialog.Portal>
+            <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] animate-fade-in" />
+            <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl bg-card border border-border/40 rounded-[32px] shadow-2xl z-[101] overflow-hidden max-h-[85vh] flex flex-col animate-in zoom-in-95 duration-200">
+              <div className="p-8 border-b border-border/20 flex justify-between items-center bg-background/20 backdrop-blur-3xl sticky top-0">
+                <div>
+                  <h2 className="text-2xl font-black text-foreground uppercase tracking-tighter">
+                    Central de Notificações
+                  </h2>
+                  <p className="text-xs text-muted-foreground font-black uppercase tracking-widest opacity-60">
+                    Histórico completo de atividades e atualizações
+                  </p>
+                </div>
+                <Dialog.Close className="w-12 h-12 rounded-2xl bg-foreground/5 flex items-center justify-center text-muted-foreground hover:bg-foreground/10 hover:text-foreground transition-all">
+                  <X className="w-6 h-6" />
+                </Dialog.Close>
+              </div>
+
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-4">
+                {notifications.length === 0 ? (
+                  <div className="py-20 text-center space-y-4">
+                    <div className="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center mx-auto border border-primary/10">
+                      <Bell className="w-8 h-8 text-primary shadow-glow" />
+                    </div>
+                    <p className="text-xs font-black text-muted-foreground uppercase tracking-widest">
+                      Nenhuma atividade recente encontrada
+                    </p>
+                  </div>
+                ) : (
+                  notifications.map((notif) => (
+                    <div
+                      key={notif.id}
+                      onClick={() => handleNotificationAction(notif)}
+                      className={cn(
+                        "p-6 rounded-[24px] border border-border/40 bg-background/20 hover:bg-foreground/[0.03] hover:border-primary/30 flex gap-6 cursor-pointer group transition-all relative",
+                        !notif.read && "border-primary/20 bg-primary/[0.02]",
+                      )}
+                    >
+                      {!notif.read && (
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-12 bg-primary rounded-full shadow-glow" />
+                      )}
+                      <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:scale-110 group-hover:bg-primary/20 transition-all border border-primary/10">
+                        {notif.type === "lead" ? (
+                          <User size={24} />
+                        ) : notif.type === "invite" ? (
+                          <Mail size={24} />
+                        ) : notif.type === "project" ||
+                          notif.type === "task" ? (
+                          <FolderKanban size={24} />
+                        ) : (
+                          <CheckCircle2 size={24} />
+                        )}
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <div className="flex justify-between items-start">
+                          <h4 className="text-lg font-black text-foreground group-hover:text-primary transition-colors uppercase tracking-tight">
+                            {notif.title}
+                          </h4>
+                          <span className="text-[10px] bg-foreground/5 px-2 py-1 rounded-lg text-muted-foreground font-black uppercase tracking-widest shrink-0">
+                            {notif.time}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          {notif.message}
+                        </p>
+                        {notif.target_tab && (
+                          <div className="pt-3 flex items-center gap-2 text-[10px] font-black text-primary uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Eye size={12} />
+                            Ir para {notif.target_tab}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="p-6 border-t border-border/20 bg-background/10 backdrop-blur-3xl flex justify-center">
+                <button
+                  onClick={async () => {
+                    const unreadIds = notifications
+                      .filter((n) => !n.read && n.type !== "invite")
+                      .map((n) => n.id);
+                    if (unreadIds.length > 0) {
+                      await supabase
+                        .from("sys_notifications")
+                        .update({ read: true })
+                        .in("id", unreadIds);
+                      setNotifications((prev) =>
+                        prev.map((n) => ({ ...n, read: true })),
+                      );
+                    }
+                  }}
+                  className="px-10 py-4 bg-primary text-primary-foreground rounded-2xl font-black text-[12px] uppercase tracking-[0.2em] shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                >
+                  Marcar todas como lidas
+                </button>
+              </div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        </Dialog.Root>
 
         {/* User Profile Menu */}
         <div className="relative ml-2" ref={userMenuRef}>

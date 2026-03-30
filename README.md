@@ -13,7 +13,7 @@ Bem-vindo ao MVP do **Naveo**, um sistema completo e de alta fidelidade visual d
 
 ## 🛡️ Segurança: Row Level Security (RLS) no Supabase
 
-Implementamos Políticas de Segurança no Supabase (RLS) para evitar que usuários comuns acessem o faturamento global da empresa ou clientes de terceiros. **Somente perfis com "role: admin" terão visão global das análises e fluxos**.
+Implementamos Políticas de Segurança no Supabase (RLS) para evitar que usuários comuns acesnpm runsem o faturamento global da empresa ou clientes de terceiros. **Somente perfis com "role: admin" terão visão global das análises e fluxos**.
 
 ### Como Configurar o Supabase
 

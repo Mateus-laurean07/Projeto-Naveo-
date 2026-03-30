@@ -81,8 +81,14 @@ export function AdminPanel({ profile }: { profile: any }) {
 
     // Online = Presença (Realtime) OU Heartbeat (2 min) OU Você mesmo
     const online = profiles.filter((p) => {
-      const isSelf = p.id === profile?.id;
-      const isOnlineByPresence = !!onlineUsersMetadata[p.id];
+      const pId = String(p.id).trim().toLowerCase();
+      const isSelf = pId === String(profile?.id).trim().toLowerCase();
+      
+      // Busca nos metadados de presença usando busca case-insensitive nas chaves
+      const isOnlineByPresence = Object.keys(onlineUsersMetadata).some(
+        key => String(key).trim().toLowerCase() === pId
+      );
+      
       const lastSeen = (p as any).last_seen_at || p.last_login_at;
       const isOnlineByHeartbeat =
         lastSeen && new Date(lastSeen) > twoMinutesAgo;
@@ -170,16 +176,18 @@ export function AdminPanel({ profile }: { profile: any }) {
             });
             toast.success("🆕 Novo usuário registrado!");
           } else if (payload.eventType === "UPDATE") {
+            const updatedId = String((payload.new as any).id).trim().toLowerCase();
             setProfiles((prev) =>
               prev.map((p) =>
-                p.id === (payload.new as any).id
+                String(p.id).trim().toLowerCase() === updatedId
                   ? { ...p, ...(payload.new as any) }
                   : p,
               ),
             );
           } else if (payload.eventType === "DELETE") {
+            const deletedId = String((payload.old as any).id).trim().toLowerCase();
             setProfiles((prev) =>
-              prev.filter((p) => p.id !== (payload.old as any).id),
+              prev.filter((p) => String(p.id).trim().toLowerCase() !== deletedId),
             );
           }
         },
@@ -389,10 +397,14 @@ export function AdminPanel({ profile }: { profile: any }) {
   };
 
   const renderUserRow = (p: Profile, isChild = false) => {
-    const presence = onlineUsersMetadata[p.id];
-    // Online via Presence API OU via heartbeat (last_seen_at dentro de 2 minutos)
-    const isSelf = p.id === profile?.id;
-    const isOnlineByPresence = !!onlineUsersMetadata[p.id];
+    const pId = String(p.id).trim().toLowerCase();
+    const isSelf = pId === String(profile?.id).trim().toLowerCase();
+    const presenceEntry = Object.entries(onlineUsersMetadata).find(
+      ([key]) => String(key).trim().toLowerCase() === pId
+    );
+    const presence = presenceEntry ? presenceEntry[1] : null;
+    const isOnlineByPresence = !!presence;
+    
     const isOnlineByHeartbeat = (() => {
       const lastSeen = (p as any).last_seen_at || p.last_login_at;
       if (!lastSeen) return false;
@@ -400,6 +412,7 @@ export function AdminPanel({ profile }: { profile: any }) {
       return diffMs < 2 * 60 * 1000; // 2 minutos
     })();
     const isOnline = isSelf || isOnlineByPresence || isOnlineByHeartbeat;
+    
     const sessionStart = presence?.online_at || p.last_login_at;
     const teamMembers = profiles.filter((child) => child.admin_id === p.id);
     const hasTeam = teamMembers.length > 0;
@@ -535,11 +548,13 @@ export function AdminPanel({ profile }: { profile: any }) {
                 <Clock className="w-3 h-3 text-muted-foreground" />
                 <span className="text-[9px] font-bold text-muted-foreground uppercase">
                   {p.last_seen_at
-                    ? new Date(p.last_seen_at).toLocaleTimeString([], {
+                    ? new Date(p.last_seen_at).toLocaleString([], {
+                        day: "2-digit",
+                        month: "2-digit",
                         hour: "2-digit",
                         minute: "2-digit",
                       })
-                    : "--:--"}
+                    : "--/-- --:--"}
                 </span>
               </div>
             </div>

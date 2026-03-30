@@ -395,17 +395,24 @@ export function Teams({ profile: currentProfile }: { profile?: any }) {
         });
 
         if (error) throw error;
+
+        // Garante que a pessoa NÃO seja bloqueada no sistema, apenas desvinculada
+        await supabase.from("profiles").update({ is_active: true }).eq("id", id);
+
         setMembers((prev) => prev.filter((m) => m.id !== id));
       }
 
       const user = authUser || (await supabase.auth.getUser()).data.user;
       const isSelf = user && id === user.id;
 
-      toast.success(
-        isSelf
-          ? "Você saiu da equipe com sucesso!"
-          : "Membro removido da equipe com sucesso!",
-      );
+      if (isSelf) {
+        toast.success(
+          "Você saiu da equipe com sucesso! O sistema será reiniciado em instantes para aplicar as mudanças.",
+        );
+        setTimeout(() => window.location.reload(), 2500);
+      } else {
+        toast.success("Membro removido da equipe com sucesso!");
+      }
     } catch (e: any) {
       const user = authUser || (await supabase.auth.getUser()).data.user;
       const isSelf = user && id === user.id;
@@ -675,12 +682,16 @@ export function Teams({ profile: currentProfile }: { profile?: any }) {
                         : true,
                     )
                 ).map((member) => {
-                  const isSelf =
-                    member.id === authUser?.id ||
-                    member.id === activeProfile?.id;
+                  const mId = String(member.id).trim().toLowerCase();
+                  const isSelf = mId === String(authUser?.id || activeProfile?.id).trim().toLowerCase();
+                  
+                  const isOnlineByPresence = Object.keys(onlineUsersMetadata).some(
+                    key => String(key).trim().toLowerCase() === mId
+                  );
+
                   const isOnline =
                     isSelf ||
-                    !!onlineUsersMetadata[member.id] ||
+                    isOnlineByPresence ||
                     (() => {
                       const lastSeen =
                         member.last_seen_at || member.last_login_at;

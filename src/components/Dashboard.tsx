@@ -217,7 +217,7 @@ export function Dashboard({
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Visão Geral</h1>
           <p className="text-muted-foreground mt-1">
-            Análise consolidada (Acesso Admin)
+            Métricas de desempenho e saúde do negócio
           </p>
         </div>
         <button
