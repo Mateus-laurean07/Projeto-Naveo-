@@ -1033,7 +1033,6 @@ export function Tasks({
   const [newComment, setNewComment] = useState("");
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentText, setEditingCommentText] = useState("");
-  const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
   const filteredTasks = tasks.filter((t) => {
@@ -1632,8 +1631,9 @@ export function Tasks({
             />
 
             <div className="space-y-4">
-              <h3 className="text-lg font-black tracking-tight text-foreground flex items-center gap-2">
-                Descrição
+              <h3 className="text-lg font-black tracking-tight text-foreground flex items-center gap-2 uppercase">
+                <FileText size={20} className="text-primary" />
+                Anotação
               </h3>
               <textarea
                 ref={descRef}
@@ -2217,236 +2217,18 @@ export function Tasks({
               )}
             </div>
 
-            <div className="bg-card border border-border/40 rounded-[2rem] p-5 shadow-sm space-y-3">
-              <div className="flex justify-between items-center">
-                <h3 className="text-sm font-bold text-foreground">Anexos</h3>
-                <label className="w-8 h-8 rounded-full border border-border/40 flex items-center justify-center text-primary shadow-sm hover:bg-primary/5 transition-all cursor-pointer bg-card group relative active:scale-95">
-                  {isUploadingAttachment ? (
-                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <Plus
-                        size={18}
-                        className="group-hover:rotate-90 transition-transform duration-300"
-                      />
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
-                        onChange={async (e) => {
-                          if (e.target.files && e.target.files[0]) {
-                            const file = e.target.files[0];
-                            setIsUploadingAttachment(true);
-
-                            // Lógica de compressão senalizada (Senior Level)
-                            if (file.type.startsWith("image/")) {
-                              const img = new Image();
-                              const objUrl = URL.createObjectURL(file);
-
-                              img.onload = async () => {
-                                URL.revokeObjectURL(objUrl);
-                                const canvas = document.createElement("canvas");
-                                const MAX_DIM = 1200;
-                                let w = img.width;
-                                let h = img.height;
-                                if (w > h) {
-                                  if (w > MAX_DIM) {
-                                    h *= MAX_DIM / w;
-                                    w = MAX_DIM;
-                                  }
-                                } else {
-                                  if (h > MAX_DIM) {
-                                    w *= MAX_DIM / h;
-                                    h = MAX_DIM;
-                                  }
-                                }
-                                canvas.width = w;
-                                canvas.height = h;
-                                const ctx = canvas.getContext("2d");
-                                if (ctx) ctx.drawImage(img, 0, 0, w, h);
-
-                                const compressedBase64 = canvas.toDataURL(
-                                  "image/webp",
-                                  0.6,
-                                );
-                                const updatedAttachments = [
-                                  ...(selectedTask.attachments || []),
-                                  compressedBase64,
-                                ];
-
-                                const { error } = await supabase
-                                  .from("project_tasks")
-                                  .update({ attachments: updatedAttachments })
-                                  .eq("id", selectedTask.id);
-
-                                if (!error) {
-                                  setSelectedTask({
-                                    ...selectedTask,
-                                    attachments: updatedAttachments,
-                                  });
-                                  setTasks(
-                                    tasks.map((t: any) =>
-                                      t.id === selectedTask.id
-                                        ? {
-                                            ...t,
-                                            attachments: updatedAttachments,
-                                          }
-                                        : t,
-                                    ),
-                                  );
-                                  toast.success("Imagem compactada e anexada!");
-                                } else {
-                                  toast.error("Erro ao salvar: " + error.message);
-                                }
-                                setIsUploadingAttachment(false);
-                              };
-
-                              img.onerror = () => {
-                                toast.error("Formato de imagem inválido");
-                                setIsUploadingAttachment(false);
-                              };
-                              img.src = objUrl;
-                            } else {
-                              // Arquivos não-imagem: base64 puro (limitado)
-                              const reader = new FileReader();
-                              reader.onloadend = async () => {
-                                const base64String = reader.result as string;
-                                const updatedAttachments = [
-                                  ...(selectedTask.attachments || []),
-                                  base64String,
-                                ];
-                                const { error } = await supabase
-                                  .from("project_tasks")
-                                  .update({ attachments: updatedAttachments })
-                                  .eq("id", selectedTask.id);
-                                if (!error) {
-                                  setSelectedTask({
-                                    ...selectedTask,
-                                    attachments: updatedAttachments,
-                                  });
-                                  setTasks(
-                                    tasks.map((t: any) =>
-                                      t.id === selectedTask.id
-                                        ? {
-                                            ...t,
-                                            attachments: updatedAttachments,
-                                          }
-                                        : t,
-                                    ),
-                                  );
-                                  toast.success("Arquivo anexado!");
-                                }
-                                setIsUploadingAttachment(false);
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }
-                        }}
-                      />
-                    </>
-                  )}
-                </label>
+            <div className="bg-card border border-border/40 rounded-[2rem] p-5 shadow-sm space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                  <Info size={20} />
+                </div>
+                <div className="flex flex-col">
+                  <h3 className="text-sm font-bold text-foreground">Dicas</h3>
+                  <span className="text-[10px] text-muted-foreground/60 font-bold uppercase tracking-tighter">
+                    As anotações acima são salvas automaticamente.
+                  </span>
+                </div>
               </div>
-
-              {selectedTask.attachments &&
-                selectedTask.attachments.length > 0 && (
-                  <div className="space-y-2">
-                    {selectedTask.attachments.map(
-                      (att: string, idx: number) => {
-                        const isImage =
-                          att.startsWith("data:image/") ||
-                          att.startsWith("blob:") ||
-                          /\.(jpg|jpeg|png|gif|webp)/i.test(att);
-                        return (
-                          <div
-                            key={idx}
-                            className="flex items-start gap-4 bg-[#0a0a0c]/40 border border-border/10 rounded-2xl p-4 group/item hover:border-primary/20 transition-all shadow-sm"
-                          >
-                            <div
-                              className="w-16 h-16 rounded-xl bg-muted/20 flex items-center justify-center text-primary shrink-0 overflow-hidden border border-border/20 shadow-md cursor-pointer hover:ring-2 hover:ring-primary/40 transition-all"
-                              onClick={() => window.open(att, "_blank")}
-                            >
-                              {isImage ? (
-                                <img
-                                  src={att}
-                                  className="w-full h-full object-cover transition-transform group-hover/item:scale-110"
-                                  alt="Anexo"
-                                />
-                              ) : (
-                                <FileText size={24} className="opacity-40" />
-                              )}
-                            </div>
-
-                            <div className="flex-1 flex flex-col gap-2 min-w-0 pt-0.5">
-                              <span
-                                className="text-[14px] font-black truncate text-foreground/90 tracking-tight cursor-pointer hover:text-primary transition-all"
-                                onClick={() => {
-                                  const link = document.createElement("a");
-                                  link.href = att;
-                                  link.download = att.startsWith("data:")
-                                    ? "anexo"
-                                    : att.split("/").pop() || "download";
-                                  link.click();
-                                }}
-                              >
-                                {att.startsWith("data:")
-                                  ? `Anexo_${idx + 1}`
-                                  : att.split("/").pop()?.split("?")[0] || att}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-2 shrink-0 pt-1">
-                              <button
-                                onClick={() => {
-                                  const link = document.createElement("a");
-                                  link.href = att;
-                                  link.download = att.startsWith("data:")
-                                    ? "anexo"
-                                    : att.split("/").pop() || "download";
-                                  link.click();
-                                }}
-                                className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-all hover:scale-110 active:scale-90"
-                                title="Baixar"
-                              >
-                                <Download size={18} />
-                              </button>
-                              <button
-                                onClick={async () => {
-                                  const updated =
-                                    selectedTask.attachments.filter(
-                                      (_: any, i: number) => i !== idx,
-                                    );
-                                  const { error } = await supabase
-                                    .from("project_tasks")
-                                    .update({ attachments: updated })
-                                    .eq("id", selectedTask.id);
-                                  if (!error) {
-                                    setSelectedTask({
-                                      ...selectedTask,
-                                      attachments: updated,
-                                    });
-                                    setTasks(
-                                      tasks.map((t: any) =>
-                                        t.id === selectedTask.id
-                                          ? { ...t, attachments: updated }
-                                          : t,
-                                      ),
-                                    );
-                                    toast.success("Removido.");
-                                  }
-                                }}
-                                className="p-2 text-red-500 hover:bg-red-500/10 rounded-xl transition-all hover:scale-110 active:scale-90"
-                                title="Excluir"
-                              >
-                                <Trash2 size={18} />
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      },
-                    )}
-                  </div>
-                )}
             </div>
 
             <TagsManager

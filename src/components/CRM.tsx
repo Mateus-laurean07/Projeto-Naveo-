@@ -570,6 +570,15 @@ function EditLeadModal({
       value:
         (form.elements.namedItem("value") as HTMLInputElement)?.value ||
         lead.value,
+      email:
+        (form.elements.namedItem("email") as HTMLInputElement)?.value ??
+        lead.email,
+      phone:
+        (form.elements.namedItem("phone") as HTMLInputElement)?.value ??
+        lead.phone,
+      project_interest:
+        (form.elements.namedItem("project_interest") as HTMLInputElement)?.value ??
+        lead.project_interest,
       stage:
         ((form.elements.namedItem("stage") as HTMLSelectElement)
           ?.value as any) || lead.stage,
@@ -699,9 +708,13 @@ function EditLeadModal({
                       </label>
                       <div className="relative">
                         <Briefcase className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <select className="w-full bg-card border border-border/50 rounded-xl py-2.5 pl-10 pr-4 text-sm text-foreground focus:outline-none focus:border-accent focus:bg-background transition-colors appearance-none">
-                          <option>Ex: Logo, Site, Social Media</option>
-                        </select>
+                        <input
+                          name="project_interest"
+                          type="text"
+                          defaultValue={lead.project_interest || ""}
+                          placeholder="Ex: Logo, Site, Social Media"
+                          className="w-full bg-card border border-border/50 rounded-xl py-2.5 pl-10 pr-4 text-sm text-foreground focus:outline-none focus:border-accent focus:bg-background transition-colors"
+                        />
                       </div>
                     </div>
                     <div>

@@ -8,18 +8,17 @@ export function formatCurrency(value: string) {
 }
 
 export function formatCPF(value: string) {
-  const val = value.replace(/\D/g, "");
-  if (val.length <= 11) {
-    return val
-      .replace(/(\d{3})(\d)/, "$1.$2")
-      .replace(/(\d{3})(\d)/, "$1.$2")
-      .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-  }
-  return val;
+  let val = value.replace(/\D/g, "");
+  if (val.length > 11) val = val.slice(0, 11);
+  return val
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 }
 
 export function formatCNPJ(value: string) {
-  const val = value.replace(/\D/g, "");
+  let val = value.replace(/\D/g, "");
+  if (val.length > 14) val = val.slice(0, 14);
   return val
     .replace(/^(\d{2})(\d)/, "$1.$2")
     .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
@@ -28,11 +27,22 @@ export function formatCNPJ(value: string) {
 }
 
 export function formatCPFCNPJ(value: string) {
-  const val = value.replace(/\D/g, "");
+  let val = value.replace(/\D/g, "");
+  if (val.length > 14) val = val.slice(0, 14); // Limite máximo do CNPJ é 14 dígitos
+
   if (val.length <= 11) {
-    return formatCPF(value);
+    // Formata CPF: 000.000.000-00
+    return val
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
   } else {
-    return formatCNPJ(value);
+    // Formata CNPJ: 00.000.000/0000-00
+    return val
+      .replace(/^(\d{2})(\d)/, "$1.$2")
+      .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+      .replace(/\.(\d{3})(\d)/, ".$1/$2")
+      .replace(/(\d{4})(\d)/, "$1-$2");
   }
 }
 

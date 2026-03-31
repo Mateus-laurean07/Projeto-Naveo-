@@ -5,7 +5,7 @@ export function Payments({ profile }: { profile?: any }) {
   const invoiceHistory: any[] = [];
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto animate-in fade-in zoom-in-95 duration-200">
+    <div className="space-y-6 w-full max-w-6xl mx-auto animate-in fade-in zoom-in-95 duration-200">
       <div className="mb-8 mt-4">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
           Histórico de Pagamentos

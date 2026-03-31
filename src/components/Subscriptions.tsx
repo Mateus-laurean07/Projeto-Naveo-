@@ -59,7 +59,7 @@ export function Subscriptions({
 
   if (!subscription) {
     return (
-      <div className="space-y-6 max-w-4xl animate-in fade-in zoom-in-95 duration-200 pb-12">
+      <div className="space-y-6 w-full max-w-6xl mx-auto animate-in fade-in zoom-in-95 duration-200 pb-12">
         <div className="flex items-center gap-6 mb-10 bg-card/40 backdrop-blur-md p-6 rounded-[2.5rem] border border-border/40 shadow-xl">
           <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center text-white shrink-0 shadow-lg shadow-accent/20">
             <Sparkles className="w-8 h-8" />
@@ -102,7 +102,7 @@ export function Subscriptions({
   }
 
   return (
-    <div className="space-y-6 max-w-4xl animate-in fade-in zoom-in-95 duration-200 pb-12">
+    <div className="space-y-6 w-full max-w-6xl mx-auto animate-in fade-in zoom-in-95 duration-200 pb-12">
       <div className="flex items-center gap-6 mb-10 bg-card/40 backdrop-blur-md p-6 rounded-[2.5rem] border border-border/40 shadow-xl">
         <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-white shrink-0 shadow-lg shadow-primary/20">
           <CheckCircle2 className="w-8 h-8" />

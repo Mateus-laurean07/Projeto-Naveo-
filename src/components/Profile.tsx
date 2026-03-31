@@ -229,7 +229,7 @@ export function Profile() {
   }
 
   return (
-    <div className="max-w-4xl animate-in fade-in zoom-in-95 duration-200 pb-12">
+    <div className="w-full max-w-6xl mx-auto animate-in fade-in zoom-in-95 duration-200 pb-12">
       {/* Header Profile Title */}
       <div className="flex items-center gap-6 mb-10 bg-card/40 backdrop-blur-md p-6 rounded-[2.5rem] border border-border/40 shadow-xl">
         <div className="w-16 h-16 rounded-2xl bg-background border-2 border-primary/20 flex items-center justify-center text-primary shrink-0 shadow-lg shadow-primary/10 overflow-hidden font-black text-xl">

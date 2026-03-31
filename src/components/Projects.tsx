@@ -83,6 +83,7 @@ type Task = {
   assign_to?: string[];
   is_archived?: boolean;
   cover_url?: string;
+  description?: string;
 };
 
 type Member = {
@@ -186,7 +187,6 @@ function ProjectTaskDetailModal({
   teamMembers: Member[];
   profile?: any;
 }) {
-  const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentText, setEditingCommentText] = useState("");
@@ -373,17 +373,6 @@ function ProjectTaskDetailModal({
               )}
             </div>
 
-            {task.description && (
-              <div className="space-y-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
-                  Descrição
-                </span>
-                <p className="text-sm text-foreground/80 leading-relaxed bg-muted/20 p-4 rounded-xl border border-border/40 italic">
-                  {task.description}
-                </p>
-              </div>
-            )}
-
             <div className="space-y-4 pt-4 border-t border-border/20">
               <MemberSelect
                 label="Responsáveis pela Tarefa"
@@ -477,192 +466,41 @@ function ProjectTaskDetailModal({
               )}
             </div>
 
-            <div className="bg-card border border-border/40 rounded-3xl p-5 shadow-sm space-y-3">
-              <div className="flex justify-between items-center">
-                <h3 className="text-sm font-bold text-foreground">Anexos</h3>
-                <label className="w-8 h-8 rounded-full border border-border/40 flex items-center justify-center text-primary shadow-sm hover:bg-primary/5 transition-all cursor-pointer bg-card group relative active:scale-95">
-                  {isUploadingAttachment ? (
-                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <Plus
-                        size={18}
-                        className="group-hover:rotate-90 transition-transform duration-300"
-                      />
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
-                        onChange={async (e) => {
-                          if (e.target.files && e.target.files[0]) {
-                            const file = e.target.files[0];
-                            setIsUploadingAttachment(true);
-
-                            if (file.type.startsWith("image/")) {
-                              const img = new Image();
-                              const objUrl = URL.createObjectURL(file);
-
-                              img.onload = async () => {
-                                URL.revokeObjectURL(objUrl);
-                                const canvas = document.createElement("canvas");
-                                const MAX_DIM = 1200;
-                                let w = img.width;
-                                let h = img.height;
-                                if (w > h) {
-                                  if (w > MAX_DIM) {
-                                    h *= MAX_DIM / w;
-                                    w = MAX_DIM;
-                                  }
-                                } else {
-                                  if (h > MAX_DIM) {
-                                    w *= MAX_DIM / h;
-                                    h = MAX_DIM;
-                                  }
-                                }
-                                canvas.width = w;
-                                canvas.height = h;
-                                const ctx = canvas.getContext("2d");
-                                if (ctx) ctx.drawImage(img, 0, 0, w, h);
-
-                                const compressedBase64 = canvas.toDataURL(
-                                  "image/webp",
-                                  0.6,
-                                );
-                                const currentAttachments = task.attachments || [];
-                                const updatedAttachments = [
-                                  ...currentAttachments,
-                                  compressedBase64,
-                                ];
-                                const { error } = await supabase
-                                  .from("project_tasks")
-                                  .update({ attachments: updatedAttachments })
-                                  .eq("id", task.id);
-                                if (!error) {
-                                  toast.success("Imagem compactada!");
-                                  onUpdate();
-                                }
-                                setIsUploadingAttachment(false);
-                              };
-
-                              img.onerror = () => {
-                                toast.error("Formato inválido");
-                                setIsUploadingAttachment(false);
-                              };
-                              img.src = objUrl;
-                            } else {
-                              const reader = new FileReader();
-                              reader.onloadend = async () => {
-                                const base64String = reader.result as string;
-                                const currentAttachments = task.attachments || [];
-                                const updatedAttachments = [
-                                  ...currentAttachments,
-                                  base64String,
-                                ];
-                                const { error } = await supabase
-                                  .from("project_tasks")
-                                  .update({ attachments: updatedAttachments })
-                                  .eq("id", task.id);
-                                if (!error) {
-                                  toast.success("Arquivo anexado!");
-                                  onUpdate();
-                                }
-                                setIsUploadingAttachment(false);
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }
-                        }}
-                      />
-                    </>
-                  )}
-                </label>
+            <div className="bg-card border border-border/40 rounded-3xl p-5 shadow-sm space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                  <FileText size={18} />
+                </div>
+                <div className="flex flex-col">
+                  <h3 className="text-sm font-bold text-foreground uppercase tracking-widest">
+                    Anotação
+                  </h3>
+                  <span className="text-[10px] text-muted-foreground/60 font-bold uppercase tracking-tighter">
+                    Detalhes e observações da tarefa
+                  </span>
+                </div>
               </div>
 
-              {task.attachments && task.attachments.length > 0 && (
-                <div className="space-y-2">
-                  {task.attachments.map((att: string, idx: number) => {
-                    const isImage =
-                      att.startsWith("data:image/") ||
-                      att.startsWith("blob:") ||
-                      /\.(jpg|jpeg|png|gif|webp)/i.test(att);
-                    return (
-                      <div
-                        key={idx}
-                        className="flex items-start gap-4 bg-[#0a0a0c]/40 border border-border/10 rounded-2xl p-4 group/item hover:border-primary/20 transition-all shadow-sm"
-                      >
-                        <div
-                          className="w-16 h-16 rounded-xl bg-muted/20 flex items-center justify-center text-primary shrink-0 overflow-hidden border border-border/20 shadow-md cursor-pointer hover:ring-2 hover:ring-primary/40 transition-all"
-                          onClick={() => window.open(att, "_blank")}
-                        >
-                          {isImage ? (
-                            <img
-                              src={att}
-                              className="w-full h-full object-cover transition-transform group-hover/item:scale-110"
-                              alt="Anexo"
-                            />
-                          ) : (
-                            <FileText size={24} className="opacity-40" />
-                          )}
-                        </div>
-
-                        <div className="flex-1 flex flex-col gap-2 min-w-0 pt-0.5">
-                          <span
-                            className="text-[14px] font-black truncate text-foreground/90 tracking-tight cursor-pointer hover:text-primary transition-all"
-                            onClick={() => {
-                              const link = document.createElement("a");
-                              link.href = att;
-                              link.download = att.startsWith("data:")
-                                ? "anexo"
-                                : att.split("/").pop() || "download";
-                              link.click();
-                            }}
-                          >
-                            {att.startsWith("data:")
-                              ? `Anexo_${idx + 1}`
-                              : att.split("/").pop()?.split("?")[0] || att}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0 pt-1">
-                          <button
-                            onClick={() => {
-                              const link = document.createElement("a");
-                              link.href = att;
-                              link.download = att.startsWith("data:")
-                                ? "anexo"
-                                : att.split("/").pop() || "download";
-                              link.click();
-                            }}
-                            className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-all hover:scale-110 active:scale-90"
-                            title="Baixar"
-                          >
-                            <Download size={18} />
-                          </button>
-                          <button
-                            onClick={async () => {
-                              const updated = task.attachments?.filter(
-                                (_: any, i: number) => i !== idx,
-                              );
-                              const { error } = await supabase
-                                .from("project_tasks")
-                                .update({ attachments: updated })
-                                .eq("id", task.id);
-                              if (!error) {
-                                onUpdate();
-                                toast.success("Removido.");
-                              }
-                            }}
-                            className="p-2 text-red-500 hover:bg-red-500/10 rounded-xl transition-all hover:scale-110 active:scale-90"
-                            title="Excluir"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              <textarea
+                defaultValue={task.description || ""}
+                placeholder="Adicione detalhes complementares..."
+                className="w-full bg-background/50 border border-border/50 rounded-2xl p-4 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none shadow-inner leading-relaxed min-h-[120px]"
+                onBlur={async (e) => {
+                  const val = e.target.value;
+                  if (val !== (task.description || "")) {
+                    const { error } = await supabase
+                      .from("project_tasks")
+                      .update({ description: val })
+                      .eq("id", task.id);
+                    if (error) {
+                      toast.error("Falha ao salvar anotação.");
+                    } else {
+                      onUpdate();
+                      toast.success("Anotação atualizada!");
+                    }
+                  }
+                }}
+              />
             </div>
 
             <div className="space-y-6 pt-6 border-t border-border/20">
@@ -1496,9 +1334,9 @@ function EditTaskModal({
   teamMembers: Member[];
   onNavigateToTask?: (taskId: string) => void;
 }) {
-  const [activeTab, setActiveTab] = useState<
-    "details" | "attachments" | "tasks"
-  >("details");
+  const [activeTab, setActiveTab] = useState<"details" | "notes" | "tasks">(
+    "details",
+  );
   const [projectTasks, setProjectTasks] = useState<ProjectTask[]>([]);
   const [loadingTasks, setLoadingTasks] = useState(false);
   const [expandedPriorities, setExpandedPriorities] = useState<string[]>([]);
@@ -1511,17 +1349,43 @@ function EditTaskModal({
   const [editedAssignTo, setEditedAssignTo] = useState<string[]>(
     task?.assign_to || [],
   );
+  const [editedDescription, setEditedDescription] = useState(
+    task?.description || "",
+  );
+  const descriptionDirtyRef = React.useRef(false);
 
   useEffect(() => {
     if (task) {
       setEditedStatus(task.status);
       setEditedPriority(task.priority);
       setEditedAssignTo(task.assign_to || []);
+      setEditedDescription(task.description || "");
+      descriptionDirtyRef.current = false;
       if (activeTab === "tasks") {
         fetchProjectTasks();
       }
     }
   }, [task, activeTab]);
+
+  const saveDescription = async () => {
+    if (!task || !descriptionDirtyRef.current) return;
+    descriptionDirtyRef.current = false;
+    const { error } = await supabase
+      .from("tasks")
+      .update({ description: editedDescription })
+      .eq("id", task.id);
+    if (error) {
+      toast.error("Erro banco: " + error.message);
+    } else {
+      onSave({ ...task, description: editedDescription });
+      toast.success("Anotação salva!");
+    }
+  };
+
+  const handleClose = () => {
+    saveDescription();
+    onClose();
+  };
 
   const fetchProjectTasks = async () => {
     if (!task) return;
@@ -1549,7 +1413,7 @@ function EditTaskModal({
   if (!task) return null;
 
   return (
-    <Dialog.Root open={!!task} onOpenChange={(open) => !open && onClose()}>
+    <Dialog.Root open={!!task} onOpenChange={(open) => !open && handleClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 animate-fade-in" />
         <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-card rounded-2xl shadow-2xl border border-border/50 z-50 animate-fade-in-up flex flex-col max-h-[90vh] transition-all duration-500">
@@ -1558,11 +1422,12 @@ function EditTaskModal({
               <Dialog.Title className="text-xl font-bold text-foreground pr-8">
                 {task.title}
               </Dialog.Title>
-              <Dialog.Close asChild>
-                <button className="text-muted-foreground hover:text-foreground transition-colors p-2 rounded-full hover:bg-foreground/5 absolute top-5 right-5">
-                  <X className="w-4 h-4" />
-                </button>
-              </Dialog.Close>
+              <button
+                onClick={handleClose}
+                className="text-muted-foreground hover:text-foreground transition-colors p-2 rounded-full hover:bg-foreground/5 absolute top-5 right-5"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
             <div className="flex bg-muted/30 p-1.5 rounded-2xl mx-1 max-w-[420px] shadow-inner border border-border/40">
               <button
@@ -1579,15 +1444,15 @@ function EditTaskModal({
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab("attachments")}
+                onClick={() => setActiveTab("notes")}
                 className={cn(
                   "flex-1 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all duration-300",
-                  activeTab === "attachments"
+                  activeTab === "notes"
                     ? "text-primary bg-card border border-primary/20 shadow-lg"
                     : "text-muted-foreground/60 hover:text-foreground hover:bg-foreground/5",
                 )}
               >
-                Anexos
+                Anotação
               </button>
               <button
                 type="button"
@@ -1706,84 +1571,40 @@ function EditTaskModal({
                   </div>
                 </form>
               </div>
-            ) : activeTab === "attachments" ? (
+            ) : activeTab === "notes" ? (
               <div className="p-6 flex flex-col gap-6 h-full min-h-[400px]">
-                <div className="flex-1 overflow-y-auto bg-background/50 rounded-2xl border border-dashed border-border/50 p-6">
-                  {!task.attachments?.length ? (
-                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-40 gap-3">
-                      <Paperclip size={32} />
-                      <span className="text-xs font-bold uppercase">
-                        Nenhum anexo
+                <div className="flex-1 flex flex-col gap-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                      <FileText size={20} />
+                    </div>
+                    <div className="flex flex-col">
+                      <h3 className="text-sm font-black uppercase tracking-widest text-foreground">
+                        Notas do Projeto
+                      </h3>
+                      <span className="text-[10px] text-muted-foreground/60 font-bold">
+                        Registre informações importantes e observações aqui
                       </span>
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-4">
-                      {task.attachments.map((att: any, i: number) => (
-                        <div
-                          key={i}
-                          className="bg-card p-4 rounded-2xl border border-border/50 flex flex-col items-center gap-3 relative group"
-                        >
-                          <button
-                            onClick={async () => {
-                              const updated =
-                                task.attachments?.filter(
-                                  (_: any, idx: number) => idx !== i,
-                                ) || [];
-                              if (onSaveAttachments)
-                                onSaveAttachments(task.id, updated);
-                              await supabase
-                                .from("tasks")
-                                .update({ attachments: updated })
-                                .eq("id", task.id);
-                            }}
-                            className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X size={14} />
-                          </button>
-                          <div className="w-10 h-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
-                            <FileSpreadsheet size={20} />
-                          </div>
-                          <span className="text-xs font-bold truncate w-full text-center px-2">
-                            {att}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="shrink-0 bg-primary/5 border border-dashed border-primary/20 p-8 rounded-[2rem] flex flex-col items-center justify-center gap-3 hover:bg-primary/10 transition-all cursor-pointer">
-                  <input
-                    type="file"
-                    id="att-up"
-                    className="hidden"
-                    multiple
-                    onChange={async (e) => {
-                      if (e.target.files?.length) {
-                        const names = Array.from(e.target.files).map(
-                          (f) => f.name,
-                        );
-                        const updated = [...(task.attachments || []), ...names];
-                        if (onSaveAttachments)
-                          onSaveAttachments(task.id, updated);
-                        await supabase
-                          .from("tasks")
-                          .update({ attachments: updated })
-                          .eq("id", task.id);
-                        toast.success("Anexado!");
-                      }
+                  </div>
+
+                  <textarea
+                    value={editedDescription}
+                    onChange={(e) => {
+                      setEditedDescription(e.target.value);
+                      descriptionDirtyRef.current = true;
                     }}
+                    placeholder="Adicione suas anotações aqui..."
+                    className="flex-1 w-full bg-background/50 border border-border/50 rounded-[1.5rem] p-6 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none shadow-inner leading-relaxed min-h-[300px]"
+                    onBlur={saveDescription}
                   />
-                  <label
-                    htmlFor="att-up"
-                    className="flex flex-col items-center gap-2 cursor-pointer"
-                  >
-                    <div className="w-12 h-12 bg-primary text-white rounded-2xl flex items-center justify-center shadow-xl">
-                      <Plus size={24} />
-                    </div>
-                    <span className="text-xs font-black uppercase tracking-widest text-foreground">
-                      Subir Arquivos
+
+                  <div className="flex items-center gap-2 px-4 py-3 bg-primary/5 rounded-xl border border-primary/10">
+                    <Info size={14} className="text-primary opacity-60" />
+                    <span className="text-[10px] font-bold text-primary/60 uppercase tracking-widest">
+                      Salva automaticamente ao clicar fora ou fechar.
                     </span>
-                  </label>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -2159,7 +1980,8 @@ export function Projects({
   const handleCreateTask = async (newT: Task) => {
     const ownerId = teamOwnerId || profile?.id;
     if (!ownerId) return;
-    const { id, ...taskWithoutId } = newT;
+    // Remove "id", "cover_url" e "comments" que não existem como colunas (ou são geradas automaticamente) na tabela "tasks"
+    const { id, cover_url, comments, ...taskWithoutId } = newT as any;
     const dbTask = {
       ...taskWithoutId,
       user_id: ownerId,
@@ -2167,7 +1989,9 @@ export function Projects({
       assign_to:
         Array.isArray(newT.assign_to) && newT.assign_to.length > 0
           ? newT.assign_to[0]
-          : newT.assign_to || null,
+          : typeof newT.assign_to === "string"
+            ? newT.assign_to
+            : null,
     };
     setTasks([newT, ...tasks]);
     const { data, error } = await supabase
@@ -2223,6 +2047,7 @@ export function Projects({
         priority: updatedTask.priority,
         due_date: updatedTask.due_date,
         assign_to: dbValue,
+        description: updatedTask.description,
       })
       .eq("id", updatedTask.id)
       .select();

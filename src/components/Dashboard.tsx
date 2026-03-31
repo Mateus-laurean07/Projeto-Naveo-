@@ -22,14 +22,21 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-const data = [
-  { name: "Jan", receita: 4000, despesa: 2400 },
-  { name: "Fev", receita: 3000, despesa: 1398 },
-  { name: "Mar", receita: 9000, despesa: 5800 },
-  { name: "Abr", receita: 2780, despesa: 3908 },
-  { name: "Mai", receita: 8890, despesa: 4800 },
-  { name: "Jun", receita: 12390, despesa: 3800 },
-];
+// Gera os últimos 6 meses como estrutura base
+function getLast6Months(): { name: string; key: string; receita: number }[] {
+  const months = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+  const result = [];
+  const now = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    result.push({
+      name: months[d.getMonth()],
+      key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+      receita: 0,
+    });
+  }
+  return result;
+}
 
 export function Dashboard({
   setTab,
@@ -50,6 +57,7 @@ export function Dashboard({
 
   const [recentProjects, setRecentProjects] = useState<any[]>([]);
   const [recentClients, setRecentClients] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<{ name: string; key: string; receita: number }[]>(getLast6Months());
 
   const isSuperAdmin = profile?.role === "super_admin";
 
@@ -147,14 +155,33 @@ export function Dashboard({
         }
       }
 
+      // Calcula o intervalo dos últimos 6 meses
+      const now = new Date();
+      const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+      const sixMonthsAgoISO = sixMonthsAgo.toISOString();
+
       const [
         { data: leadsData },
         { data: tasksData },
         { data: customersData },
+        { data: closedLeadsData },
       ] = await Promise.all([
         leadsQuery.order("created_at", { ascending: false }),
         tasksQuery.order("created_at", { ascending: false }),
         customersQuery.order("created_at", { ascending: false }),
+        // Busca leads fechados dos últimos 6 meses para o gráfico
+        (() => {
+          let q = supabase
+            .from("leads")
+            .select("value, created_at")
+            .eq("stage", "Fechado")
+            .gte("created_at", sixMonthsAgoISO);
+          if (!isSuperAdmin) {
+            const ownerId = profile?.admin_id || userId;
+            q = q.eq("user_id", ownerId);
+          }
+          return q;
+        })(),
       ]);
 
       const leadsParams = leadsData || [];
@@ -199,6 +226,17 @@ export function Dashboard({
 
       setRecentClients(customersParams.slice(0, 5));
       setRecentProjects(tasksParams.slice(0, 5));
+
+      // Monta o gráfico com dados reais dos leads fechados
+      const base = getLast6Months();
+      (closedLeadsData || []).forEach((lead: any) => {
+        const monthKey = lead.created_at?.substring(0, 7); // "YYYY-MM"
+        const valStr = (lead.value || "0").replace(/\D/g, "");
+        const val = parseInt(valStr) / 100;
+        const slot = base.find((b) => b.key === monthKey);
+        if (slot) slot.receita += val;
+      });
+      setChartData(base);
     } catch (e) {
       console.error("Erro ao carregar dados do dashboard");
     }
@@ -396,7 +434,7 @@ export function Dashboard({
           <div className="flex-1 w-full min-h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
-                data={data}
+                data={chartData}
                 margin={{ top: 10, right: 10, left: -20, bottom: 20 }}
               >
                 <defs>
