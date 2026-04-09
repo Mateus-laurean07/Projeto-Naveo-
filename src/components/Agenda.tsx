@@ -47,6 +47,7 @@ export function Agenda({ profile }: { profile?: any }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [teamOwnerId, setTeamOwnerId] = useState<string | null>(null);
+  const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
 
   useEffect(() => {
     resolveTeam();
@@ -91,7 +92,6 @@ export function Agenda({ profile }: { profile?: any }) {
     };
   }, [teamOwnerId]);
 
-
   const fetchTasks = async (ownerId: string) => {
     setLoading(true);
     let query = supabase.from("tasks").select("*").not("due_date", "is", null);
@@ -123,8 +123,9 @@ export function Agenda({ profile }: { profile?: any }) {
   };
 
   const goToToday = () => {
-    setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1));
-    setSelectedDate(today);
+    const now = new Date();
+    setCurrentMonth(new Date(now.getFullYear(), now.getMonth(), 1));
+    setSelectedDate(new Date(now.getFullYear(), now.getMonth(), now.getDate()));
   };
 
   // Calendar Logic
@@ -182,7 +183,6 @@ export function Agenda({ profile }: { profile?: any }) {
   const selectedDateStr = getDateString(selectedDate);
   const tasksForSelected = tasks.filter((t) => t.due_date === selectedDateStr);
 
-
   const holidayForSelected = holidaysList[selectedDateStr];
 
   // Estatisticas do mes atual
@@ -192,90 +192,53 @@ export function Agenda({ profile }: { profile?: any }) {
   );
   const highPriorityTasks = tasksInMonth.filter((t) => t.priority === "Alta");
 
-  let holidaysInMonthCount = 0;
-  if (showHolidays) {
-    Object.keys(holidaysList).forEach((date) => {
-      if (date.startsWith(currentMonthStrPrefix)) holidaysInMonthCount++;
-    });
-  }
+  // Próximas tarefas (independentemente do dia selecionado)
+  const upcomingTasks = [...tasks]
+    .filter(
+      (t) => t.due_date && t.due_date >= today.toISOString().split("T")[0],
+    )
+    .sort((a, b) => (a.due_date || "").localeCompare(b.due_date || ""))
+    .slice(0, 3);
 
   return (
     <div className="space-y-6 fade-in">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          Timeline de Projetos
+      <div className="mb-6">
+        <h1 className="text-4xl font-black tracking-tighter text-foreground uppercase">
+          Agenda{" "}
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
+            Naveo
+          </span>
         </h1>
-        <p className="text-muted-foreground mt-2">
-          Visualização completa de todas as etapas e prazos
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mt-2">
+          Visualização completa de todas as etapas e prazos da sua missão
         </p>
       </div>
 
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
-          <div className="flex sm:flex-row flex-col sm:items-center justify-between gap-4">
-            <div className="flex items-center bg-card border border-border/40 rounded-lg p-1">
-              <button
-                onClick={() => setView("month")}
-                className={cn(
-                  "flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm transition-colors",
-                  view === "month"
-                    ? "bg-accent text-accent-foreground font-medium"
-                    : "text-muted-foreground hover:bg-muted/50",
-                )}
-              >
-                <LayoutGrid className="w-4 h-4" />
-                <span>Mês</span>
-              </button>
-              <button
-                onClick={() => setView("week")}
-                className={cn(
-                  "flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm transition-colors",
-                  view === "week"
-                    ? "bg-accent text-accent-foreground font-medium"
-                    : "text-muted-foreground hover:bg-muted/50",
-                )}
-              >
-                <CalendarDays className="w-4 h-4" />
-                <span>Semana</span>
-              </button>
-              <button
-                onClick={() => setView("day")}
-                className={cn(
-                  "flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm transition-colors",
-                  view === "day"
-                    ? "bg-accent text-accent-foreground font-medium"
-                    : "text-muted-foreground hover:bg-muted/50",
-                )}
-              >
-                <AlignJustify className="w-4 h-4" />
-                <span>Dia</span>
-              </button>
-            </div>
 
-            <button
-              onClick={goToToday}
-              className="px-5 py-2 text-sm font-medium bg-card border border-border/40 hover:bg-muted/50 rounded-lg transition-colors"
-            >
-              Hoje
-            </button>
-          </div>
 
           <div className="bg-card border border-border/40 rounded-xl p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-foreground capitalize">
-                {monthName} {year}
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-black text-foreground capitalize tracking-tighter">
+                {monthName} <span className="text-primary">{year}</span>
               </h2>
               <div className="flex items-center space-x-2">
                 <button
+                  onClick={goToToday}
+                  className="px-4 h-10 flex items-center justify-center rounded-xl hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all border border-border/40 text-[10px] font-black uppercase tracking-widest"
+                >
+                  Hoje
+                </button>
+                <button
                   onClick={prevMonth}
-                  className="p-1 rounded-md hover:bg-muted/50 text-muted-foreground transition-colors bg-black/20"
+                  className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all border border-border/40"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
                 <button
                   onClick={nextMonth}
-                  className="p-1 rounded-md hover:bg-muted/50 text-muted-foreground transition-colors bg-black/20"
+                  className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all border border-border/40"
                 >
                   <ChevronRight className="w-5 h-5" />
                 </button>
@@ -283,25 +246,25 @@ export function Agenda({ profile }: { profile?: any }) {
             </div>
 
             <div className="flex items-center justify-between mb-8 pl-1">
-              <div className="flex items-center space-x-2 text-sm text-accent font-medium">
-                <Sparkles className="w-4 h-4" />
-                <span>Mostrar Feriados</span>
+              <div className="flex items-center space-x-2 text-[10px] text-primary font-black uppercase tracking-widest">
+                <Sparkles className="w-3 h-3" />
+                <span>Mostrar Feriados Nacionais</span>
               </div>
               <button
                 onClick={() => setShowHolidays(!showHolidays)}
                 className={cn(
-                  "w-10 h-6 rounded-full transition-colors relative",
+                  "w-12 h-6 rounded-full transition-all relative overflow-hidden",
                   showHolidays
-                    ? "bg-accent border-accent border-2"
-                    : "bg-muted border-border/40 border-2",
+                    ? "bg-primary shadow-lg shadow-primary/20"
+                    : "bg-muted border border-border/40",
                 )}
               >
                 <div
                   className={cn(
-                    "w-4 h-4 rounded-full bg-[#121212] transition-transform absolute top-[2px]",
+                    "w-4 h-4 rounded-full transition-transform absolute top-1",
                     showHolidays
-                      ? "translate-x-4 border-none"
-                      : "translate-x-0.5 bg-foreground",
+                      ? "translate-x-7 bg-primary-foreground"
+                      : "translate-x-1 bg-muted-foreground",
                   )}
                 />
               </button>
@@ -311,7 +274,7 @@ export function Agenda({ profile }: { profile?: any }) {
               {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((day) => (
                 <div
                   key={day}
-                  className="text-sm font-medium text-muted-foreground pb-4"
+                  className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest pb-4"
                 >
                   {day}
                 </div>
@@ -328,6 +291,7 @@ export function Agenda({ profile }: { profile?: any }) {
                   day,
                 );
                 const isSelected = isSameDay(currentCellDate, selectedDate);
+                const isCurrentDay = isSameDay(currentCellDate, today);
                 const dateStr = getDateString(currentCellDate);
                 const hasHoliday = showHolidays && holidaysList[dateStr];
                 const hasTask = tasks.some((t) => t.due_date === dateStr);
@@ -340,10 +304,14 @@ export function Agenda({ profile }: { profile?: any }) {
                     <div
                       onClick={() => setSelectedDate(currentCellDate)}
                       className={cn(
-                        "w-10 h-10 flex items-center justify-center rounded-lg text-sm font-medium relative group cursor-pointer transition-all",
+                        "w-10 h-10 flex items-center justify-center rounded-2xl text-xs font-black relative group cursor-pointer transition-all",
                         isSelected
-                          ? "bg-accent text-accent-foreground w-16 h-16 rounded-xl mt-[-12px] shadow-lg shadow-accent/20 scale-110 z-10"
-                          : "text-foreground hover:bg-muted/30",
+                          ? "bg-primary text-primary-foreground w-14 h-14 rounded-3xl mt-[-8px] shadow-2xl shadow-primary/30 scale-110 z-10"
+                          : isCurrentDay
+                            ? "bg-primary/20 text-primary hover:scale-110"
+                            : idx % 7 === 0 || idx % 7 === 6
+                              ? "text-muted-foreground/40 hover:bg-primary/5 hover:scale-110"
+                              : "text-foreground hover:bg-primary/5 hover:scale-110",
                       )}
                     >
                       {day}
@@ -358,21 +326,35 @@ export function Agenda({ profile }: { profile?: any }) {
                         {hasHoliday && (
                           <div
                             className={cn(
-                              "w-1.5 h-1.5 rounded-full",
+                              "w-1.5 h-1.5 rounded-full animate-pulse",
                               isSelected
                                 ? "bg-accent-foreground/50"
                                 : "bg-accent",
                             )}
                           />
                         )}
-                        {hasTask && (
-                          <div
-                            className={cn(
-                              "w-1.5 h-1.5 rounded-full",
-                              isSelected ? "bg-white" : "bg-emerald-500",
-                            )}
-                          />
-                        )}
+                        {tasks
+                          .filter((t) => t.due_date === dateStr)
+                          .filter(
+                            (t) =>
+                              !priorityFilter || t.priority === priorityFilter,
+                          )
+                          .slice(0, 3)
+                          .map((t, i) => (
+                            <div
+                              key={i}
+                              className={cn(
+                                "w-1 h-1 rounded-full",
+                                isSelected
+                                  ? "bg-white"
+                                  : t.priority === "Alta"
+                                    ? "bg-red-500"
+                                    : t.priority === "Média"
+                                      ? "bg-amber-500"
+                                      : "bg-primary",
+                              )}
+                            />
+                          ))}
                       </div>
                     </div>
                   </div>
@@ -411,29 +393,35 @@ export function Agenda({ profile }: { profile?: any }) {
                 tasksForSelected.map((t, idx) => (
                   <div
                     key={idx}
-                    className="flex items-start gap-3 p-3 rounded-lg bg-background border border-border/40"
+                    className={cn(
+                      "flex items-start gap-4 p-4 rounded-2xl bg-background/50 border-l-4 transition-all hover:bg-background/80",
+                      t.priority === "Alta"
+                        ? "border-l-red-500 bg-red-500/5 shadow-sm"
+                        : t.priority === "Média"
+                          ? "border-l-amber-500 bg-amber-500/5 shadow-sm"
+                          : "border-l-primary bg-primary/5 shadow-sm",
+                    )}
                   >
                     <div
                       className={cn(
-                        "w-2 h-2 rounded-full mt-1.5 shrink-0",
+                        "w-2.5 h-2.5 rounded-full mt-1 shrink-0",
                         t.priority === "Alta"
-                          ? "bg-red-500"
+                          ? "bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]"
                           : t.priority === "Média"
-                            ? "bg-amber-500"
-                            : "bg-emerald-500",
+                            ? "bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]"
+                            : "bg-primary shadow-[0_0_10px_rgba(26,126,251,0.5)]",
                       )}
                     />
                     <div>
-                      <h4 className="text-sm font-medium text-foreground">
+                      <h4 className="text-sm font-black text-foreground leading-tight tracking-tight uppercase">
                         {t.title}
                       </h4>
-                      <p className="text-xs text-muted-foreground mt-0.5">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 mt-1">
                         Projeto: {t.project}
                       </p>
                     </div>
                   </div>
                 ))}
-
 
               {(!holidayForSelected || !showHolidays) &&
                 tasksForSelected.length === 0 && (
@@ -444,32 +432,44 @@ export function Agenda({ profile }: { profile?: any }) {
             </div>
           </div>
 
-          <div className="bg-card border border-border/40 rounded-xl p-6">
-            <h3 className="font-semibold text-foreground mb-6">
-              Resumo do Mês
+          <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-3xl p-6">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-foreground mb-6 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              Próximos Compromissos
             </h3>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Tarefas</span>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-accent/10 text-accent">
-                  {tasksInMonth.length}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  Alta Prioridade
-                </span>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-accent/10 text-accent">
-                  {highPriorityTasks.length}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Feriados</span>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-accent/10 text-accent">
-                  {holidaysInMonthCount}
-                </span>
-              </div>
+              {upcomingTasks.length > 0 ? (
+                upcomingTasks.map((t, idx) => (
+                  <div key={idx} className="group cursor-pointer">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground/60">
+                        {t.due_date?.split("-").reverse().slice(0, 2).join("/")}
+                      </span>
+                      <span
+                        className={cn(
+                          "text-[8px] font-black px-2 py-0.5 rounded-md uppercase",
+                          t.priority === "Alta"
+                            ? "bg-red-500/10 text-red-500"
+                            : t.priority === "Média"
+                              ? "bg-amber-500/10 text-amber-500"
+                              : "bg-primary/10 text-primary",
+                        )}
+                      >
+                        {t.priority}
+                      </span>
+                    </div>
+                    <h4 className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                      {t.title}
+                    </h4>
+                    <div className="w-full h-[1px] bg-border/40 mt-3 group-last:hidden" />
+                  </div>
+                ))
+              ) : (
+                <p className="text-[10px] text-muted-foreground text-center py-4">
+                  Nenhuma tarefa futura agendada
+                </p>
+              )}
             </div>
           </div>
         </div>

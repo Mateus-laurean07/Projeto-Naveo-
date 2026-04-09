@@ -107,8 +107,8 @@ export function Sidebar({
               <TridentLogo className="w-full h-full" />
             </div>
             <div className="flex flex-col">
-              <span className="font-black text-2xl tracking-tighter text-foreground leading-none lime-glow-text">
-                NETUNO
+              <span className="font-black text-2xl tracking-tighter text-foreground leading-none drop-shadow-[0_0_15px_rgba(26,126,251,0.3)]">
+                NAVEO
               </span>
             </div>
           </div>

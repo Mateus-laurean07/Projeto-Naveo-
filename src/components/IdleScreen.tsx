@@ -45,8 +45,30 @@ export function IdleScreen() {
 
   // Paleta de cores do tema
   const c = isDark
-    ? { w1: "rgba(80,200,0,0.15)", w2: "rgba(120,240,0,0.25)", w3: "rgba(160,255,40,0.38)", foam: "rgba(200,255,100,0.55)", deep: "#021000", mid: "rgba(20,80,0,0.9)", surface: "rgba(100,220,0,0.3)", glow: "rgba(180,255,60,0.4)", text: "hsl(var(--primary))", shadow: "rgba(140,255,0,0.5)" }
-    : { w1: "rgba(1,12,200,0.15)",  w2: "rgba(26,126,251,0.28)", w3: "rgba(56,150,255,0.42)",  foam: "rgba(180,220,255,0.65)", deep: "#010618", mid: "rgba(1,10,100,0.9)",  surface: "rgba(26,126,251,0.4)", glow: "rgba(96,165,250,0.4)",  text: "#1a7efb",      shadow: "rgba(26,126,251,0.5)" };
+    ? {
+        w1: "rgba(1,12,200,0.15)",
+        w2: "rgba(1,50,250,0.25)",
+        w3: "rgba(26,126,251,0.38)",
+        foam: "rgba(120,200,255,0.55)",
+        deep: "#020617",
+        mid: "rgba(1,10,100,0.9)",
+        surface: "rgba(26,126,251,0.3)",
+        glow: "rgba(26,126,251,0.4)",
+        text: "hsl(var(--primary))",
+        shadow: "rgba(26,126,251,0.5)",
+      }
+    : {
+        w1: "rgba(1,12,200,0.15)",
+        w2: "rgba(26,126,251,0.28)",
+        w3: "rgba(56,150,255,0.42)",
+        foam: "rgba(180,220,255,0.65)",
+        deep: "#010618",
+        mid: "rgba(1,10,100,0.9)",
+        surface: "rgba(26,126,251,0.4)",
+        glow: "rgba(96,165,250,0.4)",
+        text: "#1a7efb",
+        shadow: "rgba(26,126,251,0.5)",
+      };
 
   return (
     <div
@@ -71,7 +93,7 @@ export function IdleScreen() {
           )}
         >
           <div className="relative group">
-            <div className="absolute -inset-20 rounded-full blur-[100px] animate-pulse" style={{ background: isDark ? "rgba(130,255,0,0.2)" : "rgba(26,126,251,0.25)" }} />
+            <div className="absolute -inset-20 rounded-full blur-[100px] animate-pulse" style={{ background: isDark ? "rgba(26,126,251,0.2)" : "rgba(26,126,251,0.25)" }} />
             <div
               className={cn("relative flex items-center justify-center rounded-[4rem] overflow-hidden shadow-2xl", isDark ? "bg-primary" : "bg-[#1a7efb]")}
               style={{ width: 280, height: 280, boxShadow: `0 0 60px ${c.glow}` }}
@@ -81,11 +103,14 @@ export function IdleScreen() {
           </div>
 
           <div className="flex flex-col items-center text-center">
-            <h1 className="text-5xl font-black tracking-[-0.05em] uppercase" style={{ color: "#fff", textShadow: `0 0 30px ${c.shadow}` }}>
-              NETUNO<span style={{ marginLeft: 8, color: c.text }}>NAVEO</span>
+            <h1
+              className="text-6xl font-black tracking-[-0.05em] uppercase"
+              style={{ color: "#fff", textShadow: `0 0 30px ${c.shadow}` }}
+            >
+              NAVEO
             </h1>
             <div className="w-32 h-0.5 my-5" style={{ background: `linear-gradient(to right, transparent, ${c.text}, transparent)` }} />
-            <p className="text-xs font-black uppercase tracking-[0.8em] animate-pulse" style={{ color: isDark ? "rgba(180,255,60,0.5)" : "rgba(26,126,251,0.5)" }}>
+            <p className="text-xs font-black uppercase tracking-[0.8em] animate-pulse" style={{ color: "rgba(26,126,251,0.5)" }}>
               Clique para continuar
             </p>
           </div>

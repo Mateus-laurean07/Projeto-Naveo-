@@ -260,9 +260,9 @@ export function Dashboard({
         </div>
         <button
           onClick={() => setTab?.("projects")}
-          className="bg-accent hover:bg-accent/80 text-foreground px-5 py-2.5 rounded-lg flex items-center gap-2 font-medium shadow-[0_0_15px_hsl(var(--accent))/30] transition-all active:scale-95"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2.5 rounded-xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest shadow-lg shadow-primary/20 transition-all active:scale-95"
         >
-          <Plus className="w-5 h-5" /> Novo Projeto
+          <Plus className="w-4 h-4" /> Novo Projeto
         </button>
       </div>
 
@@ -272,7 +272,7 @@ export function Dashboard({
             title: "Faturamento do mês",
             icon: DollarSign,
             value: formatCurrency(metrics.faturamento),
-            valueColor: "text-emerald-500",
+            valueColor: "text-primary",
             iconBg: "bg-accent",
             iconColor: "text-white",
             footerText: `Recebido: ${formatCurrency(metrics.recebido)} | Pendente: ${formatCurrency(metrics.pendente)}`,
@@ -344,7 +344,7 @@ export function Dashboard({
                             dataKey="value"
                             stroke="transparent"
                           >
-                            <Cell fill="#10b981" />
+                            <Cell fill="#1a7efb" />
                             <Cell fill="#ef4444" />
                           </Pie>
                         </PieChart>
@@ -367,8 +367,8 @@ export function Dashboard({
                 </h4>
 
                 <div className="flex gap-4 w-full">
-                  <div className="flex-1 flex flex-col items-center p-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
-                    <span className="text-[9px] font-black text-emerald-500 uppercase">
+                  <div className="flex-1 flex flex-col items-center p-2 rounded-xl bg-primary/5 border border-primary/10">
+                    <span className="text-[9px] font-black text-primary uppercase">
                       Ativos
                     </span>
                     <span className="text-sm font-bold text-foreground">
@@ -391,25 +391,25 @@ export function Dashboard({
           return (
             <div
               key={i}
-              className="bg-card p-5 rounded-xl border border-border/60 shadow-sm flex flex-col justify-between"
+              className="bg-card/40 backdrop-blur-xl p-6 rounded-3xl border border-border/40 shadow-xl flex flex-col justify-between group hover:border-primary/40 transition-all duration-500 hover:translate-y-[-4px]"
             >
               <div>
                 <div
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center ${metric.iconBg} ${metric.iconColor} shadow-md shadow-accent/20 mb-4`}
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center ${metric.iconBg} ${metric.iconColor} shadow-lg shadow-primary/20 mb-6 group-hover:scale-110 transition-transform`}
                 >
-                  <metric.icon className="w-5 h-5" />
+                  <metric.icon className="w-6 h-6" />
                 </div>
                 <h3
-                  className={`text-3xl font-extrabold ${metric.valueColor} truncate`}
+                  className={`text-4xl font-black tracking-tighter ${metric.valueColor} truncate drop-shadow-sm`}
                 >
                   {metric.value}
                 </h3>
-                <p className="text-sm font-semibold text-muted-foreground mt-2 mb-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mt-2 mb-4">
                   {metric.title}
                 </p>
               </div>
               {metric.footerText && (
-                <div className="pt-4 border-t border-border/40 text-xs font-semibold text-muted-foreground/80 mt-auto truncate">
+                <div className="pt-4 border-t border-border/10 text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 mt-auto truncate">
                   {metric.footerText}
                 </div>
               )}
@@ -431,7 +431,7 @@ export function Dashboard({
             </div>
             <ArrowUpRight className="w-5 h-5 text-accent" />
           </div>
-          <div className="flex-1 w-full min-h-[350px]">
+          <div className="w-full h-[350px] mt-2">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
                 data={chartData}
@@ -473,11 +473,24 @@ export function Dashboard({
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "#1e1e24",
-                    border: "1px solid #333",
-                    borderRadius: "8px",
+                    backgroundColor: "rgba(15, 23, 42, 0.9)",
+                    backdropFilter: "blur(12px)",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    borderRadius: "16px",
+                    boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3)",
                   }}
-                  itemStyle={{ color: "#fff" }}
+                  itemStyle={{
+                    color: "hsl(var(--primary))",
+                    fontWeight: "bold",
+                    textTransform: "uppercase",
+                    fontSize: "10px",
+                    letterSpacing: "0.1em",
+                  }}
+                  labelStyle={{
+                    color: "#fff",
+                    fontWeight: "900",
+                    marginBottom: "4px",
+                  }}
                 />
                 <Area
                   type="monotone"
@@ -589,9 +602,9 @@ export function Dashboard({
                   </div>
                   <div className="text-right shrink-0">
                     <span
-                      className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
+                      className={`text-[9px] font-black px-3 py-1 rounded-full border uppercase tracking-widest ${
                         client.status === "Ativo"
-                          ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                          ? "bg-primary/10 border-primary/30 text-primary shadow-[0_0_10px_rgba(26,126,251,0.1)]"
                           : "bg-red-500/10 border-red-500/30 text-red-400"
                       }`}
                     >

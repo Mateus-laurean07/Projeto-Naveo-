@@ -229,348 +229,295 @@ export function Profile() {
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto animate-in fade-in zoom-in-95 duration-200 pb-12">
+    <div className="w-full animate-in fade-in zoom-in-95 duration-200">
       {/* Header Profile Title */}
-      <div className="flex items-center gap-6 mb-10 bg-card/40 backdrop-blur-md p-6 rounded-[2.5rem] border border-border/40 shadow-xl">
-        <div className="w-16 h-16 rounded-2xl bg-background border-2 border-primary/20 flex items-center justify-center text-primary shrink-0 shadow-lg shadow-primary/10 overflow-hidden font-black text-xl">
-          {profile.avatarUrl ? (
-            <img
-              src={profile.avatarUrl}
-              alt="Avatar"
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            userInitials || <User className="w-8 h-8" />
-          )}
+      <div className="flex items-center justify-between mb-10 pb-6 border-b border-border/50">
+        <div className="flex items-center gap-6">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0 shadow-lg shadow-primary/5 overflow-hidden font-black text-xl border border-primary/20">
+            {profile.avatarUrl ? (
+              <img
+                src={profile.avatarUrl}
+                alt="Avatar"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              userInitials || <User className="w-8 h-8" />
+            )}
+          </div>
+          <div>
+            <h1 className="text-3xl font-black tracking-tight text-foreground uppercase">
+              Meu Perfil
+            </h1>
+            <p className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest leading-none mt-1">
+              Gerencie suas informações no Naveo
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-foreground uppercase">
-            Meu Perfil
-          </h1>
-          <p className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest leading-none mt-1">
-            Gerencie suas informações no Netuno
-          </p>
+
+        <div className="hidden md:flex items-center gap-3">
+          <div className="flex flex-col items-end">
+            <span className="text-[11px] font-black text-foreground uppercase tracking-widest leading-none">Último Acesso</span>
+            <span className="text-[10px] text-muted-foreground font-bold mt-1">Hoje às 10:45</span>
+          </div>
+          <div className="w-1 h-8 bg-border/40 rounded-full mx-2" />
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+            <Shield className="w-5 h-5 text-primary" />
+          </div>
         </div>
       </div>
 
-      {/* Main Container */}
-      <div className="space-y-6">
-        {/* Avatar Section */}
-        <div className="bg-card/50 backdrop-blur-xl border border-border/50 rounded-[2rem] p-8 shadow-lg">
-          <div className="flex flex-col md:flex-row items-center gap-8">
+      {/* Main Grid Layout */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+        
+        {/* Sidebar: Profile Photo & Language */}
+        <div className="xl:col-span-4 space-y-6">
+          {/* Photo Card */}
+          <div className="bg-card border border-border/50 rounded-[2.5rem] p-10 shadow-sm flex flex-col items-center text-center">
             <div
-              className="relative w-32 h-32 rounded-[2rem] bg-background border-2 border-primary/20 flex items-center justify-center overflow-hidden group cursor-pointer shadow-xl"
+              className="relative w-48 h-48 rounded-[3.5rem] bg-background border-4 border-card flex items-center justify-center overflow-hidden group cursor-pointer shadow-2xl mb-8 outline outline-1 outline-border/40"
               onClick={handleAvatarClick}
             >
               {profile.avatarUrl ? (
                 <img
                   src={profile.avatarUrl}
                   alt="Avatar"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
               ) : (
-                <span className="text-4xl font-black text-primary transition-transform duration-300 group-hover:scale-110">
-                  {userInitials || <User size={40} />}
+                <span className="text-6xl font-black text-primary transition-transform duration-500 group-hover:scale-110">
+                  {userInitials || <User size={60} />}
                 </span>
               )}
-              <div className="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
-                <Camera className="w-8 h-8 text-primary-foreground" />
+              <div className="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-[4px]">
+                <Camera className="w-10 h-10 text-white" />
               </div>
             </div>
 
-            <div className="flex-1 text-center md:text-left">
-              <h3 className="text-lg font-bold text-foreground mb-1">
-                Foto de Perfil
-              </h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Clique na imagem ou no botão para alterar seu avatar.
-              </p>
-              <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                <button
-                  onClick={handleAvatarClick}
-                  className="bg-primary text-primary-foreground hover:opacity-90 px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-primary/20"
-                >
-                  Fazer Upload
-                </button>
-                <div className="px-5 py-3 rounded-2xl border border-border/50 text-[10px] font-black text-muted-foreground uppercase tracking-widest bg-background/50">
-                  400x400px recomendado
+            <h3 className="text-xl font-black text-foreground mb-1 uppercase tracking-tight">Foto de Exibição</h3>
+            <p className="text-xs text-muted-foreground font-medium mb-8 max-w-[200px]">Formatos aceitos JPG, PNG e WEBP até 10MB.</p>
+            
+            <div className="flex flex-col gap-3 w-full">
+              <button
+                onClick={handleAvatarClick}
+                className="w-full bg-foreground text-background hover:bg-primary hover:text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl"
+              >
+                Alterar Foto
+              </button>
+            </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleAvatarChange}
+              accept="image/*"
+              className="hidden"
+            />
+          </div>
+
+          {/* Language / Account Info */}
+          <div className="bg-card border border-border/50 rounded-[2.5rem] p-10 shadow-sm">
+             <div className="space-y-8">
+                <div>
+                   <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 mb-3 block pl-1">Idioma da Interface</label>
+                   <div className="relative group">
+                     <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                     <select
+                        name="language"
+                        value={profile.language}
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                        className="w-full bg-background border border-border/50 rounded-2xl pl-12 pr-4 py-4 text-sm font-bold appearance-none focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+                     >
+                        <option value="pt-BR">Português (Brasil)</option>
+                        <option value="en-US">English (US)</option>
+                        <option value="es-ES">Español</option>
+                     </select>
+                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleAvatarChange}
-            accept="image/png, image/jpeg, image/jpg"
-            className="hidden"
-          />
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Idioma */}
-          <div className="bg-card/50 backdrop-blur-xl border border-border/50 rounded-[2rem] p-6 shadow-sm">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                <Globe className="w-5 h-5 text-accent" />
-              </div>
-              <div>
-                <h3 className="font-bold text-foreground">Idioma</h3>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black">
-                  Seleção do Sistema
-                </p>
-              </div>
-            </div>
-            <select
-              name="language"
-              value={profile.language}
-              onChange={handleChange}
-              disabled={!isEditing}
-              className={`w-full bg-background border border-border/40 rounded-xl px-4 py-3 text-foreground font-semibold focus:outline-none focus:border-accent transition-all duration-300 ${!isEditing ? "opacity-70 cursor-not-allowed" : ""}`}
-            >
-              <option value="pt-BR">Português BR</option>
-              <option value="en-US">English US</option>
-              <option value="es-ES">Español ES</option>
-            </select>
-          </div>
-
-          {/* Email (Readonly) */}
-          <div className="bg-card/50 backdrop-blur-xl border border-border/50 rounded-[2rem] p-6 shadow-sm flex items-center gap-4 group hover:border-primary/30 transition-colors">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20 lime-glow">
-              <Shield className="w-6 h-6 text-primary" />
-            </div>
-            <div className="flex-1 overflow-hidden">
-              <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mb-1 opacity-60">
-                Email Principal (Conta)
-              </p>
-              <p className="font-black text-foreground truncate text-lg tracking-tight">
-                {profile.email}
-              </p>
-            </div>
+                <div>
+                   <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 mb-3 block pl-1">E-mail da Conta</label>
+                   <div className="p-4 rounded-2xl bg-foreground/[0.02] border border-border/40 flex items-center justify-between">
+                      <span className="text-sm font-black text-foreground/70 truncate mr-2">{profile.email}</span>
+                      <Shield className="w-4 h-4 text-primary shrink-0" />
+                   </div>
+                </div>
+             </div>
           </div>
         </div>
 
-        {/* Formulário Grid */}
-        <div className="bg-card/50 backdrop-blur-xl border border-border/50 rounded-[2rem] p-8 shadow-sm">
-          <h3 className="text-lg font-bold text-foreground mb-6 flex items-center gap-2">
-            <span className="w-4 h-4 rounded-full border-2 border-accent"></span>
-            Dados do Perfil
-          </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-2">
-              <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest pl-1">
-                Nome Completo *
-              </label>
-              <input
-                type="text"
-                name="fullName"
-                value={profile.fullName}
-                onChange={handleChange}
-                disabled={!isEditing}
-                placeholder="Seu nome"
-                className={`w-full bg-background/50 border border-border/60 rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-accent focus:bg-background transition-all duration-300 ${!isEditing ? "opacity-60 cursor-not-allowed" : ""}`}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest pl-1">
-                Nome da Empresa
-              </label>
-              <input
-                type="text"
-                name="companyName"
-                value={profile.companyName}
-                onChange={handleChange}
-                disabled={!isEditing}
-                placeholder="Sua empresa"
-                className={`w-full bg-background/50 border border-border/60 rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-accent focus:bg-background transition-all duration-300 ${!isEditing ? "opacity-60 cursor-not-allowed" : ""}`}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest pl-1">
-                Telefone *
-              </label>
-              <input
-                type="text"
-                name="phone"
-                maxLength={15}
-                value={profile.phone}
-                onChange={handleChange}
-                disabled={!isEditing}
-                placeholder="(00) 00000-0000"
-                className={`w-full bg-background/50 border border-border/60 rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-accent focus:bg-background transition-all duration-300 ${!isEditing ? "opacity-60 cursor-not-allowed" : ""}`}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest pl-1">
-                CPF/CNPJ *
-              </label>
-              <input
-                type="text"
-                name="document"
-                maxLength={18}
-                value={profile.document}
-                onChange={handleChange}
-                disabled={!isEditing}
-                placeholder="00.000.000/0000-00"
-                className={`w-full bg-background/50 border border-border/60 rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-accent focus:bg-background transition-all duration-300 ${!isEditing ? "opacity-60 cursor-not-allowed" : ""}`}
-              />
-            </div>
-
-            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="md:col-span-3 space-y-2">
-                <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest pl-1">
-                  Endereço *
-                </label>
+        {/* Main Content Area: Form */}
+        <div className="xl:col-span-8 flex flex-col gap-6">
+          
+          {/* General Information */}
+          <div className="bg-card border border-border/50 rounded-[2.5rem] p-10 shadow-sm">
+            <h3 className="text-[11px] font-black text-primary uppercase tracking-[0.3em] mb-10 pl-1 border-l-4 border-primary ml-1">Informações Pessoais</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest pl-1">Nome Completo</label>
                 <input
                   type="text"
+                  name="fullName"
+                  value={profile.fullName}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  placeholder="Ex: João Silva"
+                  className="w-full bg-background border border-border/50 rounded-2xl p-5 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest pl-1">Nome da Empresa</label>
+                <input
+                  type="text"
+                  name="companyName"
+                  value={profile.companyName}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  placeholder="Opcional"
+                  className="w-full bg-background border border-border/50 rounded-2xl p-5 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest pl-1">Telefone Principal</label>
+                <input
+                  type="text"
+                  name="phone"
+                  value={profile.phone}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  placeholder="(11) 99999-9999"
+                  maxLength={15}
+                  className="w-full bg-background border border-border/50 rounded-2xl p-5 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest pl-1">Documento (CPF/CNPJ)</label>
+                <input
+                  type="text"
+                  name="document"
+                  value={profile.document}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  placeholder="000.000.000-00"
+                  maxLength={18}
+                  className="w-full bg-background border border-border/50 rounded-2xl p-5 text-[15px] font-black focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Localization Information */}
+          <div className="bg-card border border-border/50 rounded-[2.5rem] p-10 shadow-sm">
+            <h3 className="text-[11px] font-black text-primary uppercase tracking-[0.3em] mb-10 pl-1 border-l-4 border-primary ml-1">Endereço e Faturamento</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-x-8 gap-y-8">
+              <div className="md:col-span-3 lg:col-span-4 space-y-2">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest pl-1">Endereço / Rua</label>
+                <input
                   name="address"
                   value={profile.address}
                   onChange={handleChange}
                   disabled={!isEditing}
-                  placeholder="Rua, Avenida, etc"
-                  className={`w-full bg-background/50 border border-border/60 rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-accent focus:bg-background transition-all duration-300 ${!isEditing ? "opacity-60 cursor-not-allowed" : ""}`}
+                  className="w-full bg-background border border-border/50 rounded-2xl p-5 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest pl-1">
-                  Nº *
-                </label>
+
+              <div className="md:col-span-1 lg:col-span-2 space-y-2">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest pl-1">Número</label>
                 <input
-                  type="text"
                   name="addressNumber"
                   value={profile.addressNumber}
                   onChange={handleChange}
                   disabled={!isEditing}
-                  placeholder="123"
-                  className={`w-full bg-background/50 border border-border/60 rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-accent focus:bg-background transition-all duration-300 ${!isEditing ? "opacity-60 cursor-not-allowed" : ""}`}
+                  maxLength={10}
+                  className="w-full bg-background border border-border/50 rounded-2xl p-5 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
+                />
+              </div>
+
+              <div className="md:col-span-2 lg:col-span-2 space-y-2">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest pl-1">Bairro</label>
+                <input
+                  name="neighborhood"
+                  value={profile.neighborhood}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  className="w-full bg-background border border-border/50 rounded-2xl p-5 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
+                />
+              </div>
+
+              <div className="md:col-span-2 lg:col-span-2 space-y-2">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest pl-1">Cidade</label>
+                <input
+                  name="city"
+                  value={profile.city}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  className="w-full bg-background border border-border/50 rounded-2xl p-5 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
+                />
+              </div>
+
+              <div className="md:col-span-1 lg:col-span-1 space-y-2">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest pl-1">Estado</label>
+                <input
+                  name="state"
+                  value={profile.state}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  placeholder="UF"
+                  maxLength={2}
+                  className="w-full bg-background border border-border/50 rounded-2xl p-5 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
+                />
+              </div>
+
+              <div className="md:col-span-1 lg:col-span-1 space-y-2">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest pl-1">CEP</label>
+                <input
+                  name="zipCode"
+                  value={profile.zipCode}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  placeholder="00000-000"
+                  maxLength={9}
+                  className="w-full bg-background border border-border/50 rounded-2xl p-5 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
                 />
               </div>
             </div>
-
-            <div className="space-y-2">
-              <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest pl-1">
-                Bairro
-              </label>
-              <input
-                type="text"
-                name="neighborhood"
-                value={profile.neighborhood}
-                onChange={handleChange}
-                disabled={!isEditing}
-                placeholder="Bairro"
-                className={`w-full bg-background/50 border border-border/60 rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-accent focus:bg-background transition-all duration-300 ${!isEditing ? "opacity-60 cursor-not-allowed" : ""}`}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest pl-1">
-                Cidade *
-              </label>
-              <input
-                type="text"
-                name="city"
-                value={profile.city}
-                onChange={handleChange}
-                disabled={!isEditing}
-                placeholder="Sua cidade"
-                className={`w-full bg-background/50 border border-border/60 rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-accent focus:bg-background transition-all duration-300 ${!isEditing ? "opacity-60 cursor-not-allowed" : ""}`}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest pl-1">
-                Estado *
-              </label>
-              <input
-                type="text"
-                name="state"
-                value={profile.state}
-                onChange={handleChange}
-                disabled={!isEditing}
-                placeholder="Ex: SP"
-                className={`w-full bg-background/50 border border-border/60 rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-accent focus:bg-background transition-all duration-300 ${!isEditing ? "opacity-60 cursor-not-allowed" : ""}`}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest pl-1">
-                CEP *
-              </label>
-              <input
-                type="text"
-                name="zipCode"
-                maxLength={9}
-                value={profile.zipCode}
-                onChange={handleChange}
-                disabled={!isEditing}
-                placeholder="00000-000"
-                className={`w-full bg-background/50 border border-border/60 rounded-xl px-4 py-3.5 text-foreground font-medium focus:outline-none focus:border-accent focus:bg-background transition-all duration-300 ${!isEditing ? "opacity-60 cursor-not-allowed" : ""}`}
-              />
-            </div>
-
-            <div className="md:col-span-2 space-y-2 pb-2">
-              <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest pl-1">
-                País *
-              </label>
-              <select
-                name="country"
-                value={profile.country}
-                onChange={handleChange}
-                disabled={!isEditing}
-                className={`w-full bg-background/50 border border-border/60 rounded-xl px-4 py-3.5 text-foreground font-semibold focus:outline-none focus:border-accent transition-all duration-300 ${!isEditing ? "opacity-60 cursor-not-allowed" : ""}`}
-              >
-                <option value="BR">Brasil</option>
-                <option value="US">Estados Unidos</option>
-                <option value="PT">Portugal</option>
-              </select>
-            </div>
           </div>
-        </div>
 
-        {/* Salvar Action */}
-        <div className="pt-4 flex justify-end pb-12">
-          {isEditing ? (
-            <div className="flex items-center gap-4 bg-muted/30 p-2 rounded-2xl border border-border/40 backdrop-blur-sm">
-              <button
-                onClick={() => {
-                  setProfile(initialProfile);
-                  setIsEditing(false);
-                }}
-                className="bg-transparent hover:bg-foreground/5 text-foreground/80 px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="bg-primary text-primary-foreground px-10 py-3.5 rounded-2xl font-black flex items-center gap-3 transition-all shadow-xl shadow-primary/20 text-xs uppercase tracking-widest disabled:opacity-50"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Salvando...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-5 h-5" />
-                    Salvar Perfil
-                  </>
-                )}
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="bg-primary/10 hover:bg-primary hover:text-primary-foreground text-primary px-10 py-4 rounded-[1.5rem] font-black flex items-center gap-3 transition-all border border-primary/20 shadow-xl shadow-primary/5 translate-y-0 hover:-translate-y-1 text-xs uppercase tracking-[0.2em]"
-            >
-              <Edit3 className="w-5 h-5" />
-              Editar Meu Perfil
-            </button>
-          )}
+          {/* Action Bar */}
+          <div className="pt-6 flex justify-end gap-4">
+             {isEditing ? (
+               <>
+                 <button
+                   onClick={() => {
+                     setProfile(initialProfile);
+                     setIsEditing(false);
+                   }}
+                   className="px-10 py-5 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:bg-foreground/5 transition-all"
+                 >
+                   Descartar
+                 </button>
+                 <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="bg-primary text-white px-12 py-5 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 disabled:opacity-50"
+                 >
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    Salvar Alterações
+                 </button>
+               </>
+             ) : (
+               <button
+                  onClick={() => setIsEditing(true)}
+                  className="bg-foreground text-background hover:bg-primary hover:text-white px-12 py-5 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest shadow-xl transition-all"
+               >
+                  Editar Dados
+               </button>
+             )}
+          </div>
         </div>
       </div>
     </div>

@@ -208,7 +208,7 @@ export function Application({ session }: ApplicationProps) {
       <IdleScreen />
 
       <div className="flex h-screen bg-background overflow-hidden selection:bg-primary/30 selection:text-white transition-colors duration-700">
-        {/* Deep Ocean / Netuno Glow background highlights */}
+        {/* Deep Ocean / Naveo Glow background highlights */}
         <div className="fixed inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-[-25%] left-[-25%] w-[60%] h-[60%] bg-primary/10 rounded-full blur-[200px] animate-lime-pulse opacity-40 dark:opacity-20" />
           <div className="absolute bottom-[-15%] right-[-10%] w-[50%] h-[50%] bg-primary/20 rounded-full blur-[180px] opacity-30 dark:opacity-10" />

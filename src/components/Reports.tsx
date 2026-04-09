@@ -247,12 +247,12 @@ export function Reports({ profile }: { profile?: any }) {
           };
         case "Finalizado":
           return {
-            color: "#10b981",
-            badgeBg: "bg-[#10b981]/10",
-            badgeText: "text-[#10b981]",
-            glow: "shadow-[#10b981]/30",
-            border: "border-[#10b981]/30",
-            dot: "bg-[#10b981]",
+            color: "#1a7efb",
+            badgeBg: "bg-[#1a7efb]/10",
+            badgeText: "text-[#1a7efb]",
+            glow: "shadow-[#1a7efb]/30",
+            border: "border-[#1a7efb]/30",
+            dot: "bg-[#1a7efb]",
           };
       }
     };
@@ -289,9 +289,9 @@ export function Reports({ profile }: { profile?: any }) {
             <div
               key={item.id}
               className={cn(
-                "group p-6 rounded-3xl transition-all duration-300 flex flex-col gap-4 relative overflow-hidden cursor-default",
+                "group p-6 rounded-[2rem] transition-all duration-300 flex flex-col gap-4 relative overflow-hidden cursor-default",
                 status === "Finalizado"
-                  ? "bg-emerald-500/10 border-emerald-500/20 shadow-lg shadow-emerald-500/5"
+                  ? "bg-primary/5 border-primary/20 shadow-lg shadow-primary/5"
                   : "bg-card border-border shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300",
               )}
             >
@@ -300,10 +300,10 @@ export function Reports({ profile }: { profile?: any }) {
               <div className="relative z-10 flex justify-between items-start gap-4">
                 <h4
                   className={cn(
-                    "font-bold text-base leading-tight",
+                    "font-extrabold text-base leading-tight uppercase tracking-tighter",
                     status === "Finalizado"
-                      ? "text-emerald-400"
-                      : "text-foreground group-hover:text-accent transition-colors",
+                      ? "text-primary"
+                      : "text-foreground group-hover:text-primary transition-colors",
                   )}
                 >
                   {item.title}
@@ -311,8 +311,8 @@ export function Reports({ profile }: { profile?: any }) {
 
                 <div className="flex-shrink-0 flex items-center gap-2">
                   {status === "Finalizado" ? (
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-lg flex items-center gap-1">
-                      <Check className="w-3 h-3" /> Finalizado
+                    <span className="text-[10px] uppercase font-black tracking-widest text-primary bg-primary/10 px-3 py-1.5 rounded-xl flex items-center gap-1.5 border border-primary/20">
+                      <Check className="w-3.5 h-3.5 shadow-sm" /> Missão Cumprida
                     </span>
                   ) : (
                     <button
@@ -343,7 +343,7 @@ export function Reports({ profile }: { profile?: any }) {
                         alt={item.assigneeName}
                         className="w-8 h-8 rounded-full border-2 border-background shadow-md object-cover"
                       />
-                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background bg-emerald-500"></div>
+                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background bg-primary"></div>
                     </div>
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-foreground/10 flex items-center justify-center border-2 border-background shadow-md">
@@ -378,7 +378,7 @@ export function Reports({ profile }: { profile?: any }) {
                   {status === "Em Andamento" && (
                     <button
                       onClick={() => handleStatusChange(item.id, "Finalizado")}
-                      className="flex-1 py-2 px-3 rounded-xl bg-[#10b981]/10 hover:bg-[#10b981] hover:text-foreground text-[#10b981] transition-all duration-300 flex items-center justify-center gap-2 text-xs font-bold shadow-[0_0_15px_rgba(16,185,129,0.15)] hover:shadow-[#10b981]/40"
+                      className="flex-1 py-2.5 px-3 rounded-xl bg-primary/10 hover:bg-primary hover:text-primary-foreground text-primary transition-all duration-300 flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/5 hover:shadow-primary/30"
                       title="Marcar como Finalizado"
                     >
                       <CheckCircle className="w-4 h-4" /> Finalizar
@@ -413,143 +413,111 @@ export function Reports({ profile }: { profile?: any }) {
     );
   };
 
-  const chartData = [
-    {
-      name: "A Fazer",
-      value: items.filter((i) => i.status === "Novo").length,
-      color: "#0ea5e9",
-    },
-    {
-      name: "Em Andamento",
-      value: items.filter((i) => i.status === "Em Andamento").length,
-      color: "#f59e0b",
-    },
-    {
-      name: "Finalizado",
-      value: items.filter((i) => i.status === "Finalizado").length,
-      color: "#10b981",
-    },
-  ].filter((d) => d.value > 0);
-
   return (
     <div className="space-y-8 flex flex-col animate-fade-in-up pb-8 overflow-y-auto w-full h-full lg:h-[calc(100vh-80px)] custom-scrollbar">
-      <div className="flex-shrink-0 relative overflow-hidden bg-card p-6 lg:p-10 rounded-[2.5rem] border border-border/50 shadow-2xl flex flex-col lg:flex-row justify-between items-center gap-8">
+      <div className="flex-shrink-0 relative overflow-hidden bg-card p-6 lg:p-10 rounded-[2.5rem] border border-border/50 shadow-2xl flex flex-col gap-8">
         <div className="absolute top-0 right-0 w-80 h-80 bg-accent/10 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
         <div
           className="absolute bottom-0 left-0 w-80 h-80 bg-primary/10 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse"
           style={{ animationDelay: "2s" }}
         ></div>
 
-        <div className="relative z-10 text-center lg:text-left flex-1">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 mb-4">
-            <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-accent">
-              Operação Ágil
-            </span>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-black tracking-tighter text-foreground uppercase">
+              Relatórios <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Naveo</span>
+            </h1>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mt-2">
+              Análise detalhada e acompanhamento de metas em tempo real
+            </p>
           </div>
-          <h1 className="text-3xl lg:text-5xl font-black tracking-tight text-foreground mb-4 uppercase">
-            Central de{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-emerald-400 pr-2 pb-1">
-              Relatórios
-            </span>
-          </h1>
-          <p className="text-muted-foreground text-sm lg:text-base max-w-xl leading-relaxed font-medium">
-            Gerencie o progresso e a performance de cada entrega em um quadro
-            tático de alta visibilidade.
-          </p>
+          <button
+            onClick={() => setOpen(true)}
+            className="flex items-center gap-2 px-6 py-2.5 text-xs font-black uppercase tracking-widest bg-primary text-primary-foreground hover:scale-105 active:scale-95 rounded-xl transition-all shadow-lg shadow-primary/20"
+          >
+            <Plus className="w-4 h-4" /> Novo Relatório
+          </button>
         </div>
 
-        <div className="relative z-10 flex-shrink-0">
-          <Dialog.Root open={open} onOpenChange={setOpen}>
-            <Dialog.Trigger asChild>
-              <button className="group relative bg-primary text-primary-foreground px-8 py-4 rounded-2xl flex items-center gap-3 font-black transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-primary/30 uppercase tracking-[0.15em] text-[11px]">
-                <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-500" />
-                <span>Novo Relatório</span>
-              </button>
-            </Dialog.Trigger>
-            <Dialog.Portal>
-              <Dialog.Overlay className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 animate-fade-in" />
-              <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-background/95 backdrop-blur-2xl rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-border z-50 animate-fade-in-up flex flex-col overflow-hidden">
-                <div className="flex justify-between items-center p-6 border-b border-border/50 bg-gradient-to-r from-transparent to-white/5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center border border-accent/30">
-                      <Plus className="w-4 h-4 text-accent" />
-                    </div>
-                    <Dialog.Title className="text-xl font-extrabold text-foreground">
-                      Criar Relatório
-                    </Dialog.Title>
+        <Dialog.Root open={open} onOpenChange={setOpen}>
+          <Dialog.Portal>
+            <Dialog.Overlay className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 animate-fade-in" />
+            <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-background/95 backdrop-blur-2xl rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-border z-50 animate-fade-in-up flex flex-col overflow-hidden">
+              <div className="flex justify-between items-center p-6 border-b border-border/50 bg-gradient-to-r from-transparent to-white/5">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center border border-accent/30">
+                    <Plus className="w-4 h-4 text-accent" />
                   </div>
+                  <Dialog.Title className="text-xl font-extrabold text-foreground">
+                    Criar Relatório
+                  </Dialog.Title>
+                </div>
+                <Dialog.Close asChild>
+                  <button className="text-muted-foreground hover:text-foreground transition-colors bg-foreground/5 p-2 rounded-full hover:bg-foreground/10 hover:rotate-90 duration-200">
+                    <X className="w-4 h-4" />
+                  </button>
+                </Dialog.Close>
+              </div>
+              <form onSubmit={handleCreate} className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground/80 mb-2">
+                    Título / Assunto
+                  </label>
+                  <input
+                    name="title"
+                    type="text"
+                    placeholder="Ex: Relatório Mensal"
+                    className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-foreground focus:outline-none focus:border-accent"
+                    required
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-foreground/80 mb-2">
+                    Descrição
+                  </label>
+                  <textarea
+                    name="description"
+                    rows={3}
+                    placeholder="Detalhes do que deve ser feito"
+                    className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-foreground focus:outline-none focus:border-accent resize-y"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-foreground/80 mb-2">
+                    Nome do Responsável
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input
+                      name="assignee"
+                      type="text"
+                      placeholder="Ex: Responsável"
+                      className="w-full bg-background border border-border rounded-xl py-2.5 pl-10 pr-4 text-foreground focus:outline-none focus:border-accent"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-8 flex justify-end gap-3 pt-4 border-t border-border/50">
                   <Dialog.Close asChild>
-                    <button className="text-muted-foreground hover:text-foreground transition-colors bg-foreground/5 p-2 rounded-full hover:bg-foreground/10 hover:rotate-90 duration-200">
-                      <X className="w-4 h-4" />
+                    <button
+                      type="button"
+                      className="px-5 py-2.5 rounded-xl font-medium text-foreground/80 bg-background border border-border hover:bg-foreground/5 transition-colors"
+                    >
+                      Cancelar
                     </button>
                   </Dialog.Close>
+                  <button
+                    type="submit"
+                    className="bg-accent hover:bg-accent/80 text-foreground px-8 py-2.5 rounded-xl font-medium transition-all shadow-lg hover:shadow-accent/20"
+                  >
+                    Criar e Prosseguir
+                  </button>
                 </div>
-                <form onSubmit={handleCreate} className="p-6 space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground/80 mb-2">
-                      Título / Assunto
-                    </label>
-                    <input
-                      name="title"
-                      type="text"
-                      placeholder="Ex: Relatório Mensal"
-                      className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-foreground focus:outline-none focus:border-accent"
-                      required
-                      autoFocus
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground/80 mb-2">
-                      Descrição
-                    </label>
-                    <textarea
-                      name="description"
-                      rows={3}
-                      placeholder="Detalhes do que deve ser feito"
-                      className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-foreground focus:outline-none focus:border-accent resize-y"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground/80 mb-2">
-                      Nome do Responsável
-                    </label>
-                    <div className="relative">
-                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <input
-                        name="assignee"
-                        type="text"
-                        placeholder="Ex: Responsável"
-                        className="w-full bg-background border border-border rounded-xl py-2.5 pl-10 pr-4 text-foreground focus:outline-none focus:border-accent"
-                      />
-                    </div>
-                    <p className="text-[10px] text-muted-foreground mt-1">
-                      Uma foto de perfil será gerada baseada no nome usando o
-                      e-mail/sistema.
-                    </p>
-                  </div>
-
-                  <div className="mt-8 flex justify-end gap-3 pt-4 border-t border-border/50">
-                    <Dialog.Close asChild>
-                      <button
-                        type="button"
-                        className="px-5 py-2.5 rounded-xl font-medium text-foreground/80 bg-background border border-border hover:bg-foreground/5 transition-colors"
-                      >
-                        Cancelar
-                      </button>
-                    </Dialog.Close>
-                    <button
-                      type="submit"
-                      className="bg-accent hover:bg-accent/80 text-foreground px-8 py-2.5 rounded-xl font-medium transition-all shadow-lg hover:shadow-accent/20"
-                    >
-                      Criar e Prosseguir
-                    </button>
-                  </div>
-                </form>
-              </Dialog.Content>
-            </Dialog.Portal>
-          </Dialog.Root>
-        </div>
+              </form>
+            </Dialog.Content>
+          </Dialog.Portal>
+        </Dialog.Root>
 
         <Dialog.Root
           open={!!editingItem}
@@ -638,93 +606,7 @@ export function Reports({ profile }: { profile?: any }) {
         </Dialog.Root>
       </div>
 
-      <div className="hidden lg:flex w-full bg-card backdrop-blur-xl rounded-[2rem] border border-border/50 p-6 lg:p-8 items-center gap-8 relative shadow-xl overflow-hidden min-h-[160px]">
-        <div className="absolute inset-0 bg-gradient-to-r from-accent/5 via-transparent to-emerald-400/5 pointer-events-none" />
-
-        <div className="w-[180px] h-[120px] relative shrink-0 border-r border-border/50 pr-8">
-          {chartData.length > 0 ? (
-            <>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={chartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={45}
-                    outerRadius={60}
-                    paddingAngle={5}
-                    dataKey="value"
-                    stroke="transparent"
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      borderColor: "hsl(var(--border))",
-                      borderRadius: "12px",
-                      color: "hsl(var(--foreground))",
-                    }}
-                    itemStyle={{ color: "hsl(var(--foreground))" }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="absolute inset-0 right-8 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-3xl font-bold text-foreground leading-none">
-                  {items.length}
-                </span>
-                <span className="text-[10px] text-muted-foreground font-medium tracking-wider uppercase mt-1">
-                  Total
-                </span>
-              </div>
-            </>
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground text-sm text-center border-2 border-dashed border-border/50 rounded-full bg-foreground/5">
-              Nenhum
-              <br />
-              relatório
-            </div>
-          )}
-        </div>
-
-        <div className="flex-1 flex gap-6 h-full items-center">
-          {chartData.length > 0 ? (
-            chartData.map((data, index) => (
-              <div
-                key={index}
-                className="flex-1 bg-background p-5 rounded-3xl border border-border/50 flex flex-col justify-center relative shadow-lg transition-all duration-300 hover:-translate-y-1 group"
-                style={{ borderBottom: `3px solid ${data.color}` }}
-              >
-                <div
-                  className="absolute top-0 right-0 w-32 h-32 rounded-bl-full opacity-5 group-hover:opacity-10 transition-opacity"
-                  style={{ backgroundColor: data.color }}
-                />
-                <div className="flex items-center gap-3 mb-3 relative z-10">
-                  <div
-                    className="w-3 h-3 rounded-full shadow-[0_0_10px_currentColor] opacity-80"
-                    style={{ backgroundColor: data.color, color: data.color }}
-                  />
-                  <span className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">
-                    {data.name}
-                  </span>
-                </div>
-                <span className="text-4xl font-extrabold tracking-tight text-foreground relative z-10 ml-1 drop-shadow-md">
-                  {data.value}
-                </span>
-              </div>
-            ))
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-muted-foreground font-medium bg-card/50 rounded-3xl border border-border/50 h-full min-h-[120px]">
-              Crie o primeiro relatório para visualizar as métricas detalhadas
-              de status.
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="flex-1 flex gap-6 pb-4 overflow-x-auto custom-scrollbar w-full min-h-0">
+      <div className="flex-1 flex gap-6 pb-4 overflow-x-auto custom-scrollbar w-full h-[600px] lg:h-[calc(100vh-380px)] min-h-0">
         {renderColumn("A Fazer (Novo)", "Novo")}
         {renderColumn("Em Andamento", "Em Andamento")}
         {renderColumn("Finalizados", "Finalizado")}

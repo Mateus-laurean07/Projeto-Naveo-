@@ -39,6 +39,7 @@ type Member = {
   last_seen_at?: string;
   last_login_at?: string;
   admin_id?: string | null;
+  job_title?: string;
 };
 
 const INITIAL_ROLES = [
@@ -191,7 +192,8 @@ export function Teams({ profile: currentProfile }: { profile?: any }) {
                 ? "Convite Recebido"
                 : "Aguardando Cadastro",
             email: inv.email,
-            role: inv.role,
+            role: inv.role || "user", // O role de acesso real
+            job_title: inv.job_title || "Membro", // O cargo visual
             joined_at: new Date(inv.created_at).toLocaleDateString("pt-BR"),
             last_activity: "Pendente",
             status: "Pendente",
@@ -261,6 +263,7 @@ export function Teams({ profile: currentProfile }: { profile?: any }) {
           full_name: m.full_name || m.email?.split("@")[0] || "Sem Nome",
           email: m.email || user.email || "",
           role: m.role || "user",
+          job_title: m.job_title || "",
           avatar_url: m.avatar_url || "",
           nickname: m.nickname || "",
           birth_date: m.birth_date || "",
@@ -288,7 +291,8 @@ export function Teams({ profile: currentProfile }: { profile?: any }) {
               user.email?.split("@")[0] ||
               "Eu (Você)",
             email: user.email || "",
-            role: user.user_metadata?.role || "user",
+            role: user.user_metadata?.role || resolvedProfile?.role || "user",
+            job_title: resolvedProfile?.job_title || "",
             joined_at: new Date().toLocaleDateString("pt-BR"),
             status: (resolvedProfile?.is_active === false
               ? "Arquivado"
@@ -396,8 +400,8 @@ export function Teams({ profile: currentProfile }: { profile?: any }) {
 
         if (error) throw error;
 
-        // Garante que a pessoa NÃO seja bloqueada no sistema, apenas desvinculada
-        await supabase.from("profiles").update({ is_active: true }).eq("id", id);
+        // Garante que a pessoa NÃO seja bloqueada no sistema, apenas desvinculada, e reseta o admin_id
+        await supabase.from("profiles").update({ is_active: true, admin_id: null }).eq("id", id);
 
         setMembers((prev) => prev.filter((m) => m.id !== id));
       }
@@ -581,10 +585,15 @@ export function Teams({ profile: currentProfile }: { profile?: any }) {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h2 className="text-2xl font-bold text-foreground tracking-tight">
-          Membros da equipe
-        </h2>
+      <div className="flex flex-col md:flex-row justify-between items-center gap-6 pb-6 border-b border-border/50">
+        <div>
+          <h2 className="text-3xl font-black text-foreground tracking-tighter uppercase">
+            Equipe & Colaboradores
+          </h2>
+          <p className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest leading-none mt-1">
+            Gerencie o acesso dos seus parceiros na Naveo
+          </p>
+        </div>
         <button
           onClick={() => {
             const role = activeProfile?.role;
@@ -748,7 +757,7 @@ export function Teams({ profile: currentProfile }: { profile?: any }) {
                             {!member.is_invitation && isOnline && (
                               <div
                                 title="Online"
-                                className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-background shadow-sm bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                                className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-background shadow-sm bg-primary shadow-[0_0_8px_rgba(16,185,129,0.5)]"
                               />
                             )}
                           </div>
@@ -767,7 +776,7 @@ export function Teams({ profile: currentProfile }: { profile?: any }) {
                                     : member.status === "Arquivado"
                                       ? "text-red-500"
                                       : isOnline
-                                        ? "text-emerald-500"
+                                        ? "text-primary"
                                         : "text-slate-400 opacity-60",
                                 )}
                               >
@@ -799,12 +808,12 @@ export function Teams({ profile: currentProfile }: { profile?: any }) {
                         <span
                           className={cn(
                             "text-sm font-bold",
-                            member.role === "SUPER ADM"
+                            member.job_title || member.role === "SUPER ADM"
                               ? "text-primary"
                               : "text-foreground/80",
                           )}
                         >
-                          {member.role}
+                          {member.job_title || "Membro"}
                         </span>
                       </td>
                       <td className="px-6 py-5 text-right">
@@ -904,7 +913,7 @@ export function Teams({ profile: currentProfile }: { profile?: any }) {
                                       .from("profiles")
                                       .update({
                                         admin_id: member.invited_by,
-                                        role: member.role,
+                                        is_active: true,
                                         updated_at: new Date().toISOString(),
                                       })
                                       .eq("id", targetUserId);
@@ -915,17 +924,18 @@ export function Teams({ profile: currentProfile }: { profile?: any }) {
                                       .eq("id", member.id);
                                     if (invError) throw invError;
                                     toast.success(
-                                      "Convite aceito! Bem-vindo à equipe.",
+                                      "Convite aceito! Bem-vindo à equipe. O sistema será reiniciado em instantes...",
                                     );
 
                                     // Atualiza localmente e muda de aba
                                     setActiveSubTab("com-acesso");
-                                    fetchData();
+                                    
+                                    setTimeout(() => window.location.reload(), 2500);
                                   } catch (err) {
                                     toast.error("Erro ao aceitar convite.");
                                   }
                                 }}
-                                className="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest bg-emerald-500 text-white hover:bg-emerald-600 transition-all shadow-lg"
+                                className="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest bg-primary text-white hover:bg-emerald-600 transition-all shadow-lg"
                               >
                                 Aceitar Convite
                               </button>
@@ -1061,7 +1071,7 @@ export function Teams({ profile: currentProfile }: { profile?: any }) {
                   setLoading(true);
                   const { error } = await supabase.from("invitations").insert({
                     email,
-                    role: newMemberRole || "Membro",
+                    job_title: newMemberRole || "Membro", // Usando job_title para o cargo
                     status: "pending",
                     invited_by: currentProfile?.admin_id || currentProfile?.id,
                   });
@@ -1211,7 +1221,7 @@ export function Teams({ profile: currentProfile }: { profile?: any }) {
                   if (selectedMember.is_invitation) {
                     const { error } = await supabase
                       .from("invitations")
-                      .update({ role: selectedMember.role })
+                      .update({ job_title: selectedMember.job_title })
                       .eq("id", selectedMember.id);
 
                     if (error) throw error;
@@ -1219,31 +1229,22 @@ export function Teams({ profile: currentProfile }: { profile?: any }) {
                     setInvitations((prev) =>
                       prev.map((i) =>
                         i.id === selectedMember.id
-                          ? { ...i, role: selectedMember.role }
+                          ? { ...i, job_title: selectedMember.job_title }
                           : i,
                       ),
                     );
                   } else {
-                    // Se o cargo mudou ou se é uma edição de membro por superior, usar RPC
-                    // O RPC lida com a verificação de hierarquia no banco
-                    const { error: rpcError } = await supabase.rpc(
-                      "manage_team_member",
-                      {
-                        target_user_id: selectedMember.id,
-                        new_role: selectedMember.role,
-                        is_removal: false,
-                      },
-                    );
+                    // Não chamaremos o RPC se ele altera o campo "role" de forma destrutiva 
+                    // Em vez disso, atualizamos os dados localmente preservando os controles
 
-                    if (rpcError) throw rpcError;
-
-                    // O RPC já atualizou o role. Agora atualizamos os demais campos se for o caso
+                    // O update direto atualizará apenas as propriedades estéticas como Cargo (job_title)
                     const { error } = await supabase
                       .from("profiles")
                       .update({
                         full_name,
                         birth_date,
                         nickname,
+                        job_title: selectedMember.job_title,
                         ...(editPreviewImage && {
                           avatar_url: editPreviewImage,
                         }),
@@ -1264,7 +1265,7 @@ export function Teams({ profile: currentProfile }: { profile?: any }) {
                               full_name,
                               birth_date,
                               nickname,
-                              role: selectedMember.role,
+                              job_title: selectedMember.job_title,
                               ...(editPreviewImage && {
                                 avatar_url: editPreviewImage,
                               }),
@@ -1429,9 +1430,9 @@ export function Teams({ profile: currentProfile }: { profile?: any }) {
                 ) : (
                   <RoleSelect
                     id="edit-role"
-                    value={selectedMember.role}
+                    value={selectedMember.job_title || ""}
                     onChange={(v) => {
-                      setSelectedMember({ ...selectedMember, role: v });
+                      setSelectedMember({ ...selectedMember, job_title: v });
                     }}
                   />
                 )}

@@ -215,7 +215,7 @@ export function Header({
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
         <input
           type="text"
-          placeholder="Buscar no Netuno..."
+          placeholder="Buscar no Naveo..."
           className="w-full h-full pl-11 pr-4 text-sm bg-card border border-border/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all placeholder:text-muted-foreground/50"
         />
       </div>
@@ -448,7 +448,7 @@ export function Header({
                 {userName.split(" ")[0]}
               </span>
               <span className="text-[9px] text-muted-foreground leading-none mt-1 font-black uppercase tracking-tight opacity-60 truncate w-full">
-                {userEmail || "Membro Netuno"}
+                {userEmail || "Membro Naveo"}
               </span>
             </div>
             <ChevronDown

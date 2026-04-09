@@ -11,6 +11,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import { Checkout } from "./Checkout";
 
 export function Subscriptions({
   profile: activeProfile,
@@ -21,6 +22,7 @@ export function Subscriptions({
 }) {
   const [subscription, setSubscription] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isCheckout, setIsCheckout] = useState(false);
 
   useEffect(() => {
     async function loadSubscription() {
@@ -57,9 +59,13 @@ export function Subscriptions({
     );
   }
 
+  if (isCheckout) {
+    return <Checkout onBack={() => setIsCheckout(false)} />;
+  }
+
   if (!subscription) {
     return (
-      <div className="space-y-6 w-full max-w-6xl mx-auto animate-in fade-in zoom-in-95 duration-200 pb-12">
+      <div className="space-y-6 w-full animate-in fade-in zoom-in-95 duration-200 pb-12">
         <div className="flex items-center gap-6 mb-10 bg-card/40 backdrop-blur-md p-6 rounded-[2.5rem] border border-border/40 shadow-xl">
           <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center text-white shrink-0 shadow-lg shadow-accent/20">
             <Sparkles className="w-8 h-8" />
@@ -86,12 +92,12 @@ export function Subscriptions({
             Nenhuma Assinatura Ativa
           </h2>
           <p className="text-muted-foreground max-w-sm mb-10 text-lg font-medium leading-relaxed">
-            Você ainda não possui uma assinatura Netuno ativa. Escolha um plano
+            Você ainda não possui uma assinatura Naveo ativa. Escolha um plano
             para destravar todo o poder do seu CRM.
           </p>
 
           <button
-            onClick={() => setActiveTab && setActiveTab("planos")}
+            onClick={() => setIsCheckout(true)}
             className="bg-accent hover:bg-accent/80 text-white px-10 py-4 rounded-[1.5rem] font-black flex items-center gap-3 transition-all shadow-xl shadow-accent/25 hover:scale-105 active:scale-95"
           >
             Explorar Planos <ArrowRight className="w-5 h-5" />
@@ -102,7 +108,7 @@ export function Subscriptions({
   }
 
   return (
-    <div className="space-y-6 w-full max-w-6xl mx-auto animate-in fade-in zoom-in-95 duration-200 pb-12">
+    <div className="space-y-6 w-full animate-in fade-in zoom-in-95 duration-200 pb-12">
       <div className="flex items-center gap-6 mb-10 bg-card/40 backdrop-blur-md p-6 rounded-[2.5rem] border border-border/40 shadow-xl">
         <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-white shrink-0 shadow-lg shadow-primary/20">
           <CheckCircle2 className="w-8 h-8" />
@@ -164,7 +170,7 @@ export function Subscriptions({
             </p>
           </div>
           <button
-            onClick={() => setActiveTab && setActiveTab("planos")}
+            onClick={() => setIsCheckout(true)}
             className="w-full py-4 rounded-2xl bg-foreground/5 hover:bg-foreground/10 text-foreground font-black text-xs uppercase tracking-widest transition-all"
           >
             Alterar Meu Plano

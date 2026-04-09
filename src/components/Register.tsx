@@ -149,7 +149,7 @@ export function Register({ onGoToLogin }: { onGoToLogin: () => void }) {
           <h2 className="text-3xl font-bold text-foreground mb-2 tracking-tight">
             Crie sua Conta
           </h2>
-          <p className="text-muted-foreground">Junte-se à Netuno hoje mesmo</p>
+          <p className="text-muted-foreground">Junte-se à Naveo hoje mesmo</p>
         </div>
 
         <div className="bg-card rounded-3xl p-8 shadow-2xl border border-border/50">

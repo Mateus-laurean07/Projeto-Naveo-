@@ -83,12 +83,12 @@ export function AdminPanel({ profile }: { profile: any }) {
     const online = profiles.filter((p) => {
       const pId = String(p.id).trim().toLowerCase();
       const isSelf = pId === String(profile?.id).trim().toLowerCase();
-      
+
       // Busca nos metadados de presença usando busca case-insensitive nas chaves
       const isOnlineByPresence = Object.keys(onlineUsersMetadata).some(
-        key => String(key).trim().toLowerCase() === pId
+        (key) => String(key).trim().toLowerCase() === pId,
       );
-      
+
       const lastSeen = (p as any).last_seen_at || p.last_login_at;
       const isOnlineByHeartbeat =
         lastSeen && new Date(lastSeen) > twoMinutesAgo;
@@ -176,7 +176,9 @@ export function AdminPanel({ profile }: { profile: any }) {
             });
             toast.success("🆕 Novo usuário registrado!");
           } else if (payload.eventType === "UPDATE") {
-            const updatedId = String((payload.new as any).id).trim().toLowerCase();
+            const updatedId = String((payload.new as any).id)
+              .trim()
+              .toLowerCase();
             setProfiles((prev) =>
               prev.map((p) =>
                 String(p.id).trim().toLowerCase() === updatedId
@@ -185,9 +187,13 @@ export function AdminPanel({ profile }: { profile: any }) {
               ),
             );
           } else if (payload.eventType === "DELETE") {
-            const deletedId = String((payload.old as any).id).trim().toLowerCase();
+            const deletedId = String((payload.old as any).id)
+              .trim()
+              .toLowerCase();
             setProfiles((prev) =>
-              prev.filter((p) => String(p.id).trim().toLowerCase() !== deletedId),
+              prev.filter(
+                (p) => String(p.id).trim().toLowerCase() !== deletedId,
+              ),
             );
           }
         },
@@ -331,13 +337,16 @@ export function AdminPanel({ profile }: { profile: any }) {
             border: "none",
             fontWeight: "bold",
           },
-        }
+        },
       );
       setUserToDelete(null);
       return;
     }
 
-    const { error } = await supabase.from("profiles").delete().eq("id", userToDelete);
+    const { error } = await supabase
+      .from("profiles")
+      .delete()
+      .eq("id", userToDelete);
 
     if (error) {
       toast.error("Erro ao excluir usuário.");
@@ -400,11 +409,11 @@ export function AdminPanel({ profile }: { profile: any }) {
     const pId = String(p.id).trim().toLowerCase();
     const isSelf = pId === String(profile?.id).trim().toLowerCase();
     const presenceEntry = Object.entries(onlineUsersMetadata).find(
-      ([key]) => String(key).trim().toLowerCase() === pId
+      ([key]) => String(key).trim().toLowerCase() === pId,
     );
     const presence = presenceEntry ? presenceEntry[1] : null;
     const isOnlineByPresence = !!presence;
-    
+
     const isOnlineByHeartbeat = (() => {
       const lastSeen = (p as any).last_seen_at || p.last_login_at;
       if (!lastSeen) return false;
@@ -412,7 +421,7 @@ export function AdminPanel({ profile }: { profile: any }) {
       return diffMs < 2 * 60 * 1000; // 2 minutos
     })();
     const isOnline = isSelf || isOnlineByPresence || isOnlineByHeartbeat;
-    
+
     const sessionStart = presence?.online_at || p.last_login_at;
     const teamMembers = profiles.filter((child) => child.admin_id === p.id);
     const hasTeam = teamMembers.length > 0;
@@ -455,7 +464,7 @@ export function AdminPanel({ profile }: { profile: any }) {
                   )}
                 </div>
                 {isOnline && (
-                  <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-background bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-background bg-primary shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />
                 )}
               </div>
 
@@ -532,8 +541,8 @@ export function AdminPanel({ profile }: { profile: any }) {
                 </div>
               ) : isOnline ? (
                 <div className="flex items-center gap-2 group/status">
-                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)] animate-pulse" />
-                  <span className="text-[11px] font-black tracking-tighter text-emerald-500 uppercase">
+                  <div className="w-2.5 h-2.5 rounded-full bg-primary shadow-[0_0_10px_rgba(16,185,129,0.6)] animate-pulse" />
+                  <span className="text-[11px] font-black tracking-tighter text-primary uppercase">
                     Online
                   </span>
                 </div>
@@ -618,7 +627,7 @@ export function AdminPanel({ profile }: { profile: any }) {
                     "p-2 rounded-xl transition-all",
                     p.is_active !== false
                       ? "text-red-500 hover:bg-red-500/10"
-                      : "text-emerald-500 hover:bg-emerald-500/10",
+                      : "text-primary hover:bg-primary/10",
                     p.role === "super_admin" && "opacity-30 cursor-not-allowed",
                   )}
                   title={p.is_active !== false ? "Desativar" : "Ativar"}
@@ -668,7 +677,7 @@ export function AdminPanel({ profile }: { profile: any }) {
           </h1>
           <p className="text-muted-foreground mt-1 font-medium italic">
             Monitoramento de usuários em tempo real •{" "}
-            <span className="text-accent">NETUNO INFRA</span>
+            <span className="text-accent">NAVEO INFRA</span>
           </p>
         </div>
         <div className="flex gap-3">
@@ -677,7 +686,9 @@ export function AdminPanel({ profile }: { profile: any }) {
             disabled={isRefreshing || loading}
             className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-card border border-border hover:bg-accent/5 hover:border-accent/30 transition-all font-black uppercase text-[10px] tracking-widest shadow-lg"
           >
-            <RefreshCw className={cn("w-4 h-4", isRefreshing && "animate-spin")} />
+            <RefreshCw
+              className={cn("w-4 h-4", isRefreshing && "animate-spin")}
+            />
             Sincronizar
           </button>
         </div>
@@ -696,8 +707,8 @@ export function AdminPanel({ profile }: { profile: any }) {
             icon: Circle,
             label: "Online Agora",
             value: stats.online,
-            color: "text-emerald-500",
-            bg: "bg-emerald-500/10",
+            color: "text-primary",
+            bg: "bg-primary/10",
             glow: true,
           },
           {
@@ -848,7 +859,7 @@ export function AdminPanel({ profile }: { profile: any }) {
                           className={cn(
                             "w-2 h-2 rounded-full",
                             onlineUsersMetadata[selectedProfile.id]
-                              ? "bg-emerald-500 animate-pulse"
+                              ? "bg-primary animate-pulse"
                               : "bg-gray-400",
                           )}
                         />
@@ -976,7 +987,7 @@ export function AdminPanel({ profile }: { profile: any }) {
                               className={cn(
                                 "text-xs font-black uppercase tracking-widest",
                                 selectedProfile.is_active !== false
-                                  ? "text-emerald-500"
+                                  ? "text-primary"
                                   : "text-red-500",
                               )}
                             >

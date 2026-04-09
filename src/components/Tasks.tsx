@@ -78,7 +78,7 @@ const COLUMNS = [
   {
     id: "Concluído",
     title: "Concluído",
-    color: "text-emerald-500",
+    color: "text-primary",
     bg: "bg-emerald-500/10",
     border: "border-emerald-500/20",
   },
@@ -149,7 +149,7 @@ function SortableTaskCard({
                     ? "bg-red-500/10 border-red-500/20 text-red-500"
                     : task.priority === "Média"
                       ? "bg-amber-500/10 border-amber-500/20 text-amber-500"
-                      : "bg-emerald-500/10 border-emerald-500/20 text-emerald-500",
+                      : "bg-emerald-500/10 border-emerald-500/20 text-primary",
                 )}
               >
                 {task.priority === "Normal" ? "Baixa" : task.priority}
@@ -553,7 +553,7 @@ function NewTaskModal({
                     {
                       label: "Baixa",
                       value: "Normal",
-                      color: "text-emerald-500",
+                      color: "text-primary",
                     },
                     { label: "Média", value: "Média", color: "text-amber-500" },
                     { label: "Alta", value: "Alta", color: "text-red-500" },
@@ -694,7 +694,7 @@ export const PRESET_COLORS = [
   {
     id: "emerald",
     bg: "bg-emerald-500",
-    text: "text-emerald-500",
+    text: "text-primary",
     lightBg: "bg-emerald-500/10",
     border: "border-emerald-500/30",
   },
@@ -1004,10 +1004,182 @@ export function Tasks({
   const [availableProjects, setAvailableProjects] = useState<any[]>([]);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
   const [activeTask, setActiveTask] = useState<any | null>(null);
   const [selectedTask, setSelectedTask] = useState<any | null>(null);
   const titleRef = React.useRef<HTMLInputElement>(null);
   const descRef = React.useRef<HTMLTextAreaElement>(null);
+
+  const handleSetCover = async (taskId: string, url: string | null) => {
+    try {
+      const { error } = await supabase
+        .from("project_tasks")
+        .update({ cover_url: url })
+        .eq("id", taskId);
+
+      if (error) throw error;
+
+      const taskToUpdate = tasks.find((t) => t.id === taskId) || selectedTask;
+      const updatedTaskObj = { ...taskToUpdate, cover_url: url };
+      if (selectedTask?.id === taskId) {
+        setSelectedTask(updatedTaskObj);
+      }
+      setTasks((prev) =>
+        prev.map((t) => (t.id === taskId ? updatedTaskObj : t)),
+      );
+      toast.success(url ? "Capa definida com sucesso!" : "Capa removida!");
+    } catch (err: any) {
+      toast.error("Erro ao atualizar capa: " + err.message);
+    }
+  };
+
+  const handleUploadTaskAttachment = async (
+    taskId: string,
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
+
+    const files = Array.from(fileList);
+
+    try {
+      setIsUploadingAttachment(true);
+      toast.loading(`Enviando ${files.length} anexo(s)...`, {
+        id: "uploading-attachment",
+      });
+
+      const uploadPromises = files.map(async (file) => {
+        const fileData = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            if (file.type.startsWith("image/")) {
+              const img = new Image();
+              img.onload = () => {
+                const canvas = document.createElement("canvas");
+                const MAX_DIM = 1600; // Aumentado para melhor qualidade
+                let { width, height } = img;
+                if (width > height) {
+                  if (width > MAX_DIM) {
+                    height *= MAX_DIM / width;
+                    width = MAX_DIM;
+                  }
+                } else {
+                  if (height > MAX_DIM) {
+                    width *= MAX_DIM / height;
+                    height = MAX_DIM;
+                  }
+                }
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext("2d");
+                if (ctx) {
+                  ctx.drawImage(img, 0, 0, width, height);
+                  // Qualidade aumentada de 0.7 para 0.85
+                  resolve(canvas.toDataURL("image/jpeg", 0.85));
+                } else {
+                  resolve(reader.result as string);
+                }
+              };
+              img.src = reader.result as string;
+            } else {
+              resolve(reader.result as string);
+            }
+          };
+          reader.readAsDataURL(file);
+        });
+
+        return {
+          id: crypto.randomUUID(),
+          name: file.name,
+          type: file.type || "application/octet-stream",
+          url: fileData,
+          size: (file.size / 1024 / 1024).toFixed(2) + " MB",
+          createdAt: new Date().toISOString(),
+        };
+      });
+
+      const newAttachments = await Promise.all(uploadPromises);
+
+      const taskToUpdate = tasks.find((t) => t.id === taskId) || selectedTask;
+      const currentAttachments = Array.isArray(taskToUpdate?.attachments)
+        ? taskToUpdate.attachments
+        : [];
+      const updatedAttachments = [...newAttachments, ...currentAttachments];
+
+      const { error } = await supabase
+        .from("project_tasks")
+        .update({ attachments: updatedAttachments })
+        .eq("id", taskId);
+
+      if (error) {
+        toast.error("Falha ao salvar anexos: " + error.message, {
+          id: "uploading-attachment",
+        });
+        return;
+      }
+
+      const updatedTaskObj = {
+        ...taskToUpdate,
+        attachments: updatedAttachments,
+      };
+      if (selectedTask?.id === taskId) {
+        setSelectedTask(updatedTaskObj);
+      }
+      setTasks((prev) =>
+        prev.map((t) => (t.id === taskId ? updatedTaskObj : t)),
+      );
+      toast.success(`${files.length} anexo(s) adicionado(s) com sucesso!`, {
+        id: "uploading-attachment",
+      });
+    } catch (err: any) {
+      toast.error("Erro inesperado no upload: " + err.message, {
+        id: "uploading-attachment",
+      });
+    } finally {
+      setIsUploadingAttachment(false);
+      // Limpa o input para permitir selecionar o mesmo arquivo novamente se necessário
+      if (e.target) e.target.value = "";
+    }
+  };
+
+  const handleDeleteTaskAttachment = async (
+    taskId: string,
+    attachmentId: string,
+  ) => {
+    try {
+      const taskToUpdate = tasks.find((t) => t.id === taskId) || selectedTask;
+      const currentAttachments = Array.isArray(taskToUpdate?.attachments)
+        ? taskToUpdate.attachments
+        : [];
+      const updatedAttachments = currentAttachments.filter(
+        (a: any) => a.id !== attachmentId,
+      );
+
+      const { error } = await supabase
+        .from("project_tasks")
+        .update({ attachments: updatedAttachments })
+        .eq("id", taskId);
+
+      if (error) {
+        toast.error("Falha ao excluir anexo: " + error.message);
+        return;
+      }
+
+      const updatedTaskObj = {
+        ...taskToUpdate,
+        attachments: updatedAttachments,
+      };
+      if (selectedTask?.id === taskId) {
+        setSelectedTask(updatedTaskObj);
+      }
+      setTasks((prev) =>
+        prev.map((t) => (t.id === taskId ? updatedTaskObj : t)),
+      );
+      toast.success("Anexo excluído.");
+    } catch (err: any) {
+      toast.error("Erro inesperado: " + err.message);
+    }
+  };
 
   const handleSelectTask = (task: any) => {
     setSelectedTask(task);
@@ -1579,10 +1751,17 @@ export function Tasks({
               onClick={async () => {
                 // Tenta salvar alterações pendentes antes de sair
                 if (selectedTask) {
-                  const newTitle = titleRef.current?.value.trim() || selectedTask.title;
-                  const newDesc = descRef.current?.value.trim() || (selectedTask.description || "");
+                  const newTitle =
+                    titleRef.current?.value.trim() || selectedTask.title;
+                  const newDesc =
+                    descRef.current?.value.trim() ||
+                    selectedTask.description ||
+                    "";
 
-                  if (newTitle !== selectedTask.title || newDesc !== (selectedTask.description || "")) {
+                  if (
+                    newTitle !== selectedTask.title ||
+                    newDesc !== (selectedTask.description || "")
+                  ) {
                     await supabase
                       .from("project_tasks")
                       .update({ title: newTitle, description: newDesc })
@@ -1725,17 +1904,24 @@ export function Tasks({
                     .map((msg: any) => (
                       <div key={msg.id} className="flex gap-4 group">
                         <div className="w-10 h-10 shrink-0 rounded-full overflow-hidden bg-background border border-border/50 flex items-center justify-center">
-                          {msg.avatar ? (
-                            <img
-                              src={msg.avatar}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <User
-                              size={16}
-                              className="text-muted-foreground/50"
-                            />
-                          )}
+                          {(() => {
+                            const currentAvatar =
+                              msg.userId === profile?.id
+                                ? profile?.avatar_url
+                                : teamMembers.find((m) => m.id === msg.userId)
+                                    ?.avatar_url || msg.avatar;
+                            return currentAvatar ? (
+                              <img
+                                src={currentAvatar}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <User
+                                size={16}
+                                className="text-muted-foreground/50"
+                              />
+                            );
+                          })()}
                         </div>
                         <div className="flex-1 space-y-1.5 pt-1 rounded-2xl p-4 bg-muted/10 border border-border/40 group-hover:bg-muted/20 transition-all relative">
                           <div className="flex items-center justify-between">
@@ -1816,23 +2002,23 @@ export function Tasks({
               Detalhes
             </h2>
 
-            <div className="bg-card/40 p-8 rounded-[2.5rem] border border-border/40 space-y-8 shadow-sm relative overflow-hidden group">
+            <div className="bg-card border border-border/40 p-4 rounded-[2.5rem] space-y-5 shadow-sm relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-colors" />
-              <h4 className="text-xl font-black tracking-tight z-10 relative">
+              <h4 className="text-xl font-black tracking-tight z-10 relative text-foreground">
                 Prazos
               </h4>
 
-              <div className="grid grid-cols-1 gap-8 z-10 relative">
+              <div className="grid grid-cols-1 gap-3 z-10 relative">
                 <div className="flex items-center justify-between group/item">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-background rounded-2xl flex items-center justify-center border border-border/50 shadow-sm transition-transform group-hover/item:scale-105">
-                      <CalendarIcon className="w-6 h-6 text-emerald-500" />
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-background rounded-xl flex items-center justify-center border border-border/50 shadow-sm transition-transform group-hover/item:scale-105">
+                      <CalendarIcon className="w-5 h-5 text-primary" />
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">
+                      <span className="text-xs font-black uppercase tracking-widest text-muted-foreground/60 whitespace-nowrap">
                         Início
                       </span>
-                      <span className="text-[10px] text-muted-foreground/40 flex items-center gap-1">
+                      <span className="text-[10px] text-muted-foreground/40 flex items-center gap-1 whitespace-nowrap">
                         Quando começar? <Info className="w-3 h-3" />
                       </span>
                     </div>
@@ -1864,29 +2050,29 @@ export function Tasks({
                         toast.success("Data atualizada.");
                       }
                     }}
-                    className="bg-muted/30 border border-border/50 rounded-xl px-4 py-2 text-right font-bold text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 [color-scheme:dark] cursor-pointer"
+                    className="bg-muted border border-border/50 rounded-xl px-2 py-2 text-right font-bold text-[10px] focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer text-foreground w-[110px] shrink-0"
                   />
                 </div>
 
                 <div className="flex items-center justify-between group/item">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-background rounded-2xl flex items-center justify-center border border-border/50 shadow-sm transition-transform group-hover/item:scale-105">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-background rounded-xl flex items-center justify-center border border-border/50 shadow-sm transition-transform group-hover/item:scale-105">
                       <AlertCircle
                         className={cn(
-                          "w-6 h-6",
+                          "w-5 h-5",
                           selectedTask.priority === "Alta"
                             ? "text-red-500"
                             : selectedTask.priority === "Média"
                               ? "text-amber-500"
-                              : "text-emerald-500",
+                              : "text-primary",
                         )}
                       />
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">
+                      <span className="text-xs font-black uppercase tracking-widest text-muted-foreground/60 whitespace-nowrap">
                         Prioridade
                       </span>
-                      <span className="text-[10px] text-muted-foreground/40">
+                      <span className="text-[10px] text-muted-foreground/40 whitespace-nowrap">
                         Nível de urgência
                       </span>
                     </div>
@@ -1895,14 +2081,14 @@ export function Tasks({
                     <DropdownMenu.Trigger asChild>
                       <button
                         className={cn(
-                          "bg-muted/30 border border-border/50 rounded-xl px-4 py-2 min-w-[120px] flex items-center justify-between transition-all hover:bg-muted/40",
+                          "bg-muted/30 border border-border/50 rounded-xl px-3 py-2 min-w-[110px] flex items-center justify-between transition-all hover:bg-muted/40",
                           selectedTask.priority === "Urgente"
                             ? "text-purple-600"
                             : selectedTask.priority === "Alta"
                               ? "text-red-500"
                               : selectedTask.priority === "Média"
                                 ? "text-amber-500"
-                                : "text-emerald-500",
+                                : "text-primary",
                         )}
                       >
                         <span className="text-sm font-bold capitalize">
@@ -1919,7 +2105,7 @@ export function Tasks({
                           {
                             label: "Baixa",
                             value: "Normal",
-                            color: "text-emerald-500",
+                            color: "text-primary",
                             bg: "hover:bg-emerald-500/10",
                           },
                           {
@@ -1983,16 +2169,16 @@ export function Tasks({
                 </div>
 
                 <div className="flex items-center justify-between group/item">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-background rounded-2xl flex items-center justify-center border border-border/50 shadow-sm transition-transform group-hover/item:scale-105">
-                      <Clock className="w-6 h-6 text-amber-500" />
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-background rounded-xl flex items-center justify-center border border-border/50 shadow-sm transition-transform group-hover/item:scale-105">
+                      <Clock className="w-5 h-5 text-amber-500" />
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">
+                      <span className="text-xs font-black uppercase tracking-widest text-muted-foreground/60 whitespace-nowrap">
                         Entrega
                       </span>
-                      <span className="text-[10px] text-muted-foreground/40">
-                        Data de vencimento
+                      <span className="text-[10px] text-muted-foreground/40 whitespace-nowrap">
+                        Vencimento
                       </span>
                     </div>
                   </div>
@@ -2020,7 +2206,7 @@ export function Tasks({
                         toast.success("Data atualizada.");
                       }
                     }}
-                    className="bg-muted/30 border border-border/50 rounded-xl px-4 py-2 text-right font-bold text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 [color-scheme:dark] cursor-pointer"
+                    className="bg-muted border border-border/50 rounded-xl px-2 py-2 text-right font-bold text-[10px] focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer text-foreground w-[110px] shrink-0"
                   />
                 </div>
               </div>
@@ -2161,8 +2347,9 @@ export function Tasks({
                       className="h-full bg-primary transition-all duration-700 ease-out"
                       style={{
                         width: `${
-                          (selectedTask.checklist.filter((i: any) => i.completed)
-                            .length /
+                          (selectedTask.checklist.filter(
+                            (i: any) => i.completed,
+                          ).length /
                             selectedTask.checklist.length) *
                           100
                         }%`,
@@ -2218,17 +2405,151 @@ export function Tasks({
             </div>
 
             <div className="bg-card border border-border/40 rounded-[2rem] p-5 shadow-sm space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
-                  <Info size={20} />
-                </div>
-                <div className="flex flex-col">
-                  <h3 className="text-sm font-bold text-foreground">Dicas</h3>
-                  <span className="text-[10px] text-muted-foreground/60 font-bold uppercase tracking-tighter">
-                    As anotações acima são salvas automaticamente.
-                  </span>
-                </div>
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-sm font-bold text-foreground">Anexos</h3>
+                {isUploadingAttachment ? (
+                  <div className="w-8 h-8 rounded-full border border-primary flex items-center justify-center text-primary shadow-sm bg-transparent">
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : (
+                  <label className="w-8 h-8 rounded-full border border-border/30 flex items-center justify-center hover:bg-primary/10 transition-all bg-transparent active:scale-95 cursor-pointer group hover:border-primary/40">
+                    <input
+                      type="file"
+                      className="hidden"
+                      multiple
+                      onChange={(e) =>
+                        handleUploadTaskAttachment(selectedTask.id, e)
+                      }
+                    />
+                    <Plus
+                      size={16}
+                      className="text-primary transition-transform duration-300 group-hover:rotate-90 group-hover:scale-110"
+                    />
+                  </label>
+                )}
               </div>
+
+              {selectedTask.attachments &&
+                selectedTask.attachments.length > 0 && (
+                  <div className="space-y-4 pt-1">
+                    {selectedTask.attachments.map((file: any) => {
+                      const isImage =
+                        file.type?.includes("image") ||
+                        file.url?.startsWith("data:image");
+                      return (
+                        <div
+                          key={file.id}
+                          className="flex flex-row items-center justify-between gap-3 group"
+                        >
+                          <div className="flex flex-row items-center gap-3 min-w-0 flex-1">
+                            <div
+                              onClick={() => {
+                                const newWindow = window.open();
+                                if (newWindow) {
+                                  newWindow.document.write(`
+                                  <html>
+                                    <head>
+                                      <title>${file.name}</title>
+                                      <style>
+                                        body { margin: 0; background: #0f172a; display: flex; align-items: center; justify-center: center; min-height: 100vh; font-family: sans-serif; color: white; }
+                                        .container { text-align: center; width: 100%; padding: 20px; }
+                                        img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); }
+                                        .info { margin-top: 20px; font-size: 14px; opacity: 0.7; }
+                                        .btn { display: inline-block; margin-top: 20px; padding: 10px 20px; background: #3b82f6; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; }
+                                      </style>
+                                    </head>
+                                    <body>
+                                      <div class="container">
+                                        ${
+                                          isImage
+                                            ? `<img src="${file.url}" alt="${file.name}" />`
+                                            : `
+                                          <div style="font-size: 48px; margin-bottom: 20px;">📄</div>
+                                          <h2>${file.name}</h2>
+                                          <p>Este arquivo não pode ser visualizado diretamente no navegador.</p>
+                                        `
+                                        }
+                                        <div class="info">${file.name} - ${file.size || ""}</div>
+                                        <a href="${file.url}" download="${file.name}" class="btn">Baixar Arquivo</a>
+                                      </div>
+                                    </body>
+                                  </html>
+                                `);
+                                  newWindow.document.close();
+                                }
+                              }}
+                              className="flex flex-row items-center gap-3 min-w-0 cursor-pointer hover:opacity-80 transition-opacity flex-1"
+                              title="Clique para visualizar melhor"
+                            >
+                              {isImage ? (
+                                <div className="w-12 h-12 shrink-0 rounded-[14px] overflow-hidden border border-border/20 bg-black/10 relative group/thumb">
+                                  <img
+                                    src={file.url}
+                                    alt={file.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 flex items-center justify-center transition-opacity">
+                                    <ImageIcon
+                                      size={16}
+                                      className="text-white"
+                                    />
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="w-12 h-12 shrink-0 rounded-[14px] bg-primary/10 text-primary flex items-center justify-center border border-primary/20 hover:scale-105 transition-transform duration-300">
+                                  <FileText size={20} />
+                                </div>
+                              )}
+                              <div className="flex flex-col gap-1.5 min-w-0">
+                                <span className="text-[13px] font-bold truncate text-foreground/90 group-hover:text-primary transition-colors">
+                                  {file.name}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground/60 font-medium">
+                                  {file.size}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                const link = document.createElement("a");
+                                link.href = file.url;
+                                link.download = file.name;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                              }}
+                              className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all group/dl"
+                              title="Baixar"
+                            >
+                              <Download
+                                size={16}
+                                className="transition-transform duration-300 group-hover/dl:-translate-y-0.5"
+                              />
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleDeleteTaskAttachment(
+                                  selectedTask.id,
+                                  file.id,
+                                )
+                              }
+                              className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-all group/del"
+                              title="Excluir"
+                            >
+                              <Trash2
+                                size={16}
+                                className="transition-transform duration-300 group-hover/del:scale-110"
+                              />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
             </div>
 
             <TagsManager
@@ -2494,7 +2815,7 @@ export function Tasks({
                   ? "border-red-500 shadow-red-500/10 text-red-500 bg-red-500/10"
                   : priority === "Média"
                     ? "border-amber-500 shadow-amber-500/10 text-amber-500 bg-amber-500/10"
-                    : "border-emerald-500 shadow-emerald-500/10 text-emerald-500 bg-emerald-500/10";
+                    : "border-emerald-500 shadow-emerald-500/10 text-primary bg-emerald-500/10";
 
               const isExpanded = expandedPriorities.includes(priority);
               const priorityLabel = priority === "Normal" ? "Baixa" : priority;

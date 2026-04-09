@@ -100,7 +100,6 @@ O Naveo utiliza arquitetura de segurança de nível corporativo através do Supa
    ```
 
 2. **Configuração do Banco (Supabase)**:
-
    - Certifique-se de executar as tabelas fundamentais (`profiles`, `clientes`,
      `projetos`, `tasks`, `leads`, `sys_notifications`).
    - Garanta que a tabela `tasks` tenha a coluna `description` habilitada. (Veja
@@ -128,4 +127,4 @@ O Naveo utiliza arquitetura de segurança de nível corporativo através do Supa
 
 **Desenvolvido para ser a bússola definitiva na gestão de negócios modernos.**
 
-⚓ *Naveo - Navegando na complexidade, entregando clareza.*
+⚓ _Naveo - Navegando na complexidade, entregando clareza._

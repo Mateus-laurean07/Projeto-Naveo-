@@ -108,7 +108,7 @@ export function Login({
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Ondas de fundo Netuno */}
+      {/* Ondas de fundo Naveo */}
       <div className="auth-wave-container">
         <div className="auth-wave"></div>
         <div className="auth-wave"></div>
@@ -120,7 +120,7 @@ export function Login({
             <TridentLogo className="w-10 h-10 text-primary-foreground" />
           </div>
           <h2 className="text-3xl font-bold text-foreground mb-2 tracking-tight">
-            Central Netuno
+            Central Naveo
           </h2>
           <p className="text-muted-foreground">
             Acesse sua conta para continuar

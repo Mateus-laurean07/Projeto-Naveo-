@@ -223,7 +223,7 @@ export function Tunoo({
       const welcomeMsg = {
         session_id: data.id,
         role: "assistant" as const,
-        content: `⚓ **Bem-vindo a bordo, Capitão ${profile.full_name?.split(" ")[0] || ""}!**\n\nEu sou o **NETUNO**, a inteligência estratégica central da NAVEO. Atuarei como seu **Capitão-Engenheiro** nesta missão.\n\nMinha missão é compreender o destino antes de executarmos qualquer manobra. Para começarmos nossa jornada com precisão técnica e visão criativa:\n\n> **Qual o nome do cliente ou projeto que vamos navegar hoje?**\n\nEstou com o radar ligado pronto para o reconhecimento de terreno! 🔍`,
+        content: `⚓ **Bem-vindo a bordo, Capitão ${profile.full_name?.split(" ")[0] || ""}!**\n\nEu sou a **NAVEO AI**, a inteligência estratégica central da plataforma. Atuarei como sua **Central de Inteligência** nesta missão.\n\nMinha missão é compreender o destino antes de executarmos qualquer manobra. Para começarmos nossa jornada com precisão técnica e visão criativa:\n\n> **Qual o nome do cliente ou projeto que vamos navegar hoje?**\n\nEstou com o radar ligado pronto para o reconhecimento de terreno! 🔍`,
       };
 
       await supabase.from("tunoo_messages").insert(welcomeMsg);
@@ -380,7 +380,7 @@ export function Tunoo({
     }
 
     if (sessionId) {
-      simulateNetunoResponse(userContent, sessionId, hasAttachments);
+      simulateNaveoResponse(userContent, sessionId, hasAttachments);
     }
 
     setPendingAttachments([]);
@@ -428,7 +428,7 @@ export function Tunoo({
   const downloadImage = (url: string, filename: string) => {
     const link = document.createElement("a");
     link.href = url;
-    link.download = filename || "netuno-export.png";
+    link.download = filename || "naveo-export.png";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -441,7 +441,7 @@ export function Tunoo({
     const reportContent = messages
       .map(
         (m) =>
-          `${m.role === "assistant" ? "NETUNO" : "COMANDANTE"} (${new Date(m.created_at).toLocaleString()}):\n${m.content}\n`,
+          `${m.role === "assistant" ? "NAVEO AI" : "COMANDANTE"} (${new Date(m.created_at).toLocaleString()}):\n${m.content}\n`,
       )
       .join("\n---\n\n");
 
@@ -456,7 +456,7 @@ export function Tunoo({
     toast.success("Dossiê de missão exportado com sucesso!");
   };
 
-  async function simulateNetunoResponse(
+  async function simulateNaveoResponse(
     userText: string,
     sessionId: string,
     hasAttachments: boolean = false,
@@ -497,7 +497,7 @@ export function Tunoo({
       let identification: any = null;
 
       if (!isInvestigationRequest) {
-        response = `⚓ **NETUNO | COMANDO CENTRAL**
+        response = `⚓ **NAVEO | COMANDO CENTRAL**
 
 Maré alta, Capitão! 🌊 Minha frota de busca está em prontidão. 
 
@@ -588,7 +588,7 @@ Maré alta, Capitão! 🌊 Varredura profunda finalizada. Localizei as coordenad
 "Genuinamente mato-grossense com cultura simples e estrutura moderna."
 "Maior rede de varejo do Mato Grosso, reconhecida pela tradição e facilidade."
 
-### 💡 **Análise Estratégica NETUNO**
+### 💡 **Análise Estratégica NAVEO**
 **Pontos Fortes:** Marca consolidada com 36 anos de mercado e presença física massiva.
 **Oportunidades:** Unificar o fluxo de atendimento digital com a **NAVEO** para converter seguidores em clientes recorrentes.
 
@@ -749,7 +749,7 @@ Maré alta, Capitão! 🌊 Varredura profunda finalizada. Localizei as coordenad
             </div>
             <div className="flex flex-col">
               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 leading-none">
-                Netuno
+                Naveo AI
               </span>
               <span className="text-sm font-bold text-white tracking-tight">
                 Intelligence
@@ -967,7 +967,7 @@ Maré alta, Capitão! 🌊 Varredura profunda finalizada. Localizei as coordenad
                   >
                     {msg.role === "assistant" && (
                       <span className="text-[9px] font-black uppercase tracking-widest text-[#64748b] ml-1">
-                        Capitão Netuno
+                        Capitão Naveo
                       </span>
                     )}
 
@@ -1153,7 +1153,7 @@ Maré alta, Capitão! 🌊 Varredura profunda finalizada. Localizei as coordenad
                   !e.shiftKey &&
                   (e.preventDefault(), handleSendMessage())
                 }
-                placeholder="Converse com o NETUNO..."
+                placeholder="Converse com a NAVEO..."
                 className="flex-1 bg-transparent border-none py-3 text-[14px] focus:outline-none resize-none max-h-32 text-[#1e293b] dark:text-white placeholder:text-[#94a3b8] dark:placeholder:text-slate-500 font-medium"
                 rows={1}
               />
@@ -1312,7 +1312,7 @@ Maré alta, Capitão! 🌊 Varredura profunda finalizada. Localizei as coordenad
             <aside className="w-16 lg:w-64 bg-white dark:bg-[#212529]/30 border-r border-[#e2e8f0] dark:border-white/5 flex flex-col p-4 lg:p-6 transition-all">
               <div className="mb-10 px-2 hidden lg:block">
                 <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-1">
-                  Netuno
+                  Naveo
                 </h2>
                 <p className="text-[14px] font-black text-[#0a2540] dark:text-white italic uppercase tracking-tighter">
                   Core Engine
@@ -1403,14 +1403,14 @@ Maré alta, Capitão! 🌊 Varredura profunda finalizada. Localizei as coordenad
                 <div>
                   <h1 className="text-2xl font-black text-[#0a2540] dark:text-white uppercase italic tracking-tighter">
                     {settingsTab === "prompt" && "System Prompt"}
-                    {settingsTab === "brain" && "Cérebro do NETUNO"}
+                    {settingsTab === "brain" && "Cérebro da NAVEO"}
                     {settingsTab === "trash" && "Lixeira Tática"}
                   </h1>
                   <p className="text-xs text-slate-500 font-medium italic mt-1 opacity-60">
                     {settingsTab === "prompt" &&
-                      "Define a personalidade e comportamento do NETUNO"}
+                      "Define a personalidade e comportamento da NAVEO"}
                     {settingsTab === "brain" &&
-                      "Metodologia, arquétipos e conhecimentos globais que o NETUNO usa"}
+                      "Metodologia, arquétipos e conhecimentos globais que a NAVEO usa"}
                     {settingsTab === "trash" &&
                       "Gerenciamento e recuperação de missões descartadas"}
                   </p>

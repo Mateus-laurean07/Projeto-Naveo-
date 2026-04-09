@@ -52,7 +52,7 @@ export function LoadingScreen() {
                 ? "text-primary drop-shadow-[0_0_20px_hsl(var(--primary)/0.4)]"
                 : "text-[#1a7efb] drop-shadow-[0_0_20px_rgba(26,126,251,0.4)]"
             )}>
-              Netuno
+              Naveo
             </h3>
             <div className={cn(
               "h-[1px] w-64 bg-gradient-to-r from-transparent to-transparent",

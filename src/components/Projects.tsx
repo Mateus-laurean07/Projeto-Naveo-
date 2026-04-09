@@ -323,7 +323,7 @@ function ProjectTaskDetailModal({
                     ? "bg-red-500/10 border-red-500/20 text-red-500"
                     : task.priority === "Média"
                       ? "bg-amber-500/10 border-amber-500/20 text-amber-500"
-                      : "bg-emerald-500/10 border-emerald-500/20 text-emerald-500",
+                      : "bg-primary/10 border-primary/20 text-primary",
                 )}
               >
                 {task.priority === "Normal" ? "Baixa" : task.priority}
@@ -350,7 +350,7 @@ function ProjectTaskDetailModal({
                   <div
                     className={cn(
                       "w-2 h-2 rounded-full",
-                      task.completed ? "bg-emerald-500" : "bg-amber-500",
+                      task.completed ? "bg-primary" : "bg-amber-500",
                     )}
                   />
                   <span className="text-sm font-bold text-foreground">
@@ -657,7 +657,7 @@ function ProjectTaskDetailModal({
                 "px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 shadow-lg",
                 task.completed
                   ? "bg-amber-500 text-white shadow-amber-500/20"
-                  : "bg-emerald-500 text-white shadow-emerald-500/20",
+                  : "bg-primary text-white shadow-primary/20",
               )}
             >
               {task.completed ? <Clock size={14} /> : <CheckCircle size={14} />}

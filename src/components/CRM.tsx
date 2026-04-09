@@ -188,6 +188,7 @@ function NewLeadModal({ onAddLead }: { onAddLead: (l: Lead) => void }) {
                     name="phone"
                     type="text"
                     placeholder="(00) 00000-0000"
+                    maxLength={15}
                     onChange={(e) =>
                       (e.target.value = formatPhone(e.target.value))
                     }
@@ -215,6 +216,7 @@ function NewLeadModal({ onAddLead }: { onAddLead: (l: Lead) => void }) {
                   <input
                     type="text"
                     placeholder="00.000.000/0000-00"
+                    maxLength={18}
                     onChange={(e) =>
                       (e.target.value = formatCPFCNPJ(e.target.value))
                     }
@@ -236,6 +238,7 @@ function NewLeadModal({ onAddLead }: { onAddLead: (l: Lead) => void }) {
                 <input
                   type="text"
                   placeholder="00000-000"
+                  maxLength={9}
                   onChange={(e) => (e.target.value = formatCEP(e.target.value))}
                   className="w-full bg-background border border-border rounded-xl py-2.5 px-3 text-foreground focus:outline-none focus:border-accent"
                 />
@@ -259,6 +262,7 @@ function NewLeadModal({ onAddLead }: { onAddLead: (l: Lead) => void }) {
                   <input
                     type="text"
                     placeholder="Nº"
+                    maxLength={10}
                     className="w-full bg-background border border-border rounded-xl py-2.5 px-3 text-foreground focus:outline-none focus:border-accent"
                   />
                 </div>
@@ -302,6 +306,7 @@ function NewLeadModal({ onAddLead }: { onAddLead: (l: Lead) => void }) {
                   <input
                     type="text"
                     placeholder="UF"
+                    maxLength={2}
                     className="w-full bg-background border border-border rounded-xl py-2.5 px-3 text-foreground focus:outline-none focus:border-accent"
                   />
                 </div>
@@ -444,7 +449,7 @@ function LeadCard({
           <span className="text-[10px] uppercase font-bold tracking-wider text-accent bg-accent/10 px-2 py-1 rounded-md">
             {lead.tags[0]}
           </span>
-          <span className="text-xs font-semibold text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-md">
+          <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded-md">
             {lead.value}
           </span>
         </div>
@@ -504,7 +509,7 @@ function KanbanColumn({
                   ? "bg-amber-500 shadow-amber-500/50"
                   : stage === "Em Negociação"
                     ? "bg-purple-500 shadow-purple-500/50"
-                    : "bg-emerald-500 shadow-emerald-500/50",
+                    : "bg-primary shadow-primary/50",
             )}
           />
           <h3 className="font-semibold text-sm">{stage}</h3>
@@ -678,6 +683,7 @@ function EditLeadModal({
                           name="phone"
                           type="text"
                           defaultValue={lead.phone || ""}
+                          maxLength={15}
                           onChange={(e) =>
                             (e.target.value = formatPhone(e.target.value))
                           }

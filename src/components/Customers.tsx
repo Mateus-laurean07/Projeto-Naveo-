@@ -25,7 +25,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { formatPhone } from "../lib/masks";
+import { formatPhone, formatCPFCNPJ, formatCEP } from "../lib/masks";
 
 type Customer = {
   id: string;
@@ -332,8 +332,8 @@ export function Customers({ profile }: { profile?: any }) {
                             type="text"
                             {...register("document")}
                             placeholder="000.000.000-00"
+                            maxLength={18}
                             onChange={(e) => {
-                              const { formatCPFCNPJ } = require("../lib/masks");
                               const formatted = formatCPFCNPJ(e.target.value);
                               e.target.value = formatted;
                               setValue("document", formatted);
@@ -363,6 +363,7 @@ export function Customers({ profile }: { profile?: any }) {
                             type="text"
                             {...register("phone")}
                             placeholder="(00) 00000-0000"
+                            maxLength={15}
                             onChange={(e) => {
                               const formatted = formatPhone(e.target.value);
                               e.target.value = formatted;
@@ -408,8 +409,8 @@ export function Customers({ profile }: { profile?: any }) {
                               type="text"
                               {...register("cep")}
                               placeholder="00000-000"
+                              maxLength={9}
                               onChange={(e) => {
-                                const { formatCEP } = require("../lib/masks");
                                 const formatted = formatCEP(e.target.value);
                                 e.target.value = formatted;
                                 setValue("cep", formatted);
@@ -437,6 +438,7 @@ export function Customers({ profile }: { profile?: any }) {
                             <input
                               type="text"
                               {...register("address_number")}
+                              maxLength={10}
                               className="w-full bg-card border border-border/50 rounded-xl py-2 px-4 text-sm text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
                             />
                           </div>
@@ -471,6 +473,7 @@ export function Customers({ profile }: { profile?: any }) {
                               type="text"
                               {...register("state")}
                               placeholder="EX: RS"
+                              maxLength={2}
                               className="w-full bg-card border border-border/50 rounded-xl py-2 px-4 text-sm text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
                             />
                           </div>
@@ -672,8 +675,8 @@ export function Customers({ profile }: { profile?: any }) {
                       type="text"
                       {...register("document")}
                       placeholder="000.000.000-00"
+                      maxLength={18}
                       onChange={(e) => {
-                        const { formatCPFCNPJ } = require("../lib/masks");
                         const formatted = formatCPFCNPJ(e.target.value);
                         e.target.value = formatted;
                         setValue("document", formatted);
@@ -703,8 +706,8 @@ export function Customers({ profile }: { profile?: any }) {
                       type="text"
                       {...register("phone")}
                       placeholder="(00) 00000-0000"
+                      maxLength={15}
                       onChange={(e) => {
-                        const { formatPhone } = require("../lib/masks");
                         const formatted = formatPhone(e.target.value);
                         e.target.value = formatted;
                         setValue("phone", formatted);
@@ -749,8 +752,8 @@ export function Customers({ profile }: { profile?: any }) {
                         type="text"
                         {...register("cep")}
                         placeholder="00000-000"
+                        maxLength={9}
                         onChange={(e) => {
-                          const { formatCEP } = require("../lib/masks");
                           const formatted = formatCEP(e.target.value);
                           e.target.value = formatted;
                           setValue("cep", formatted);
@@ -778,6 +781,7 @@ export function Customers({ profile }: { profile?: any }) {
                       <input
                         type="text"
                         {...register("address_number")}
+                        maxLength={10}
                         className="w-full bg-card border border-border/50 rounded-xl py-2 px-4 text-sm text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
                       />
                     </div>
@@ -812,6 +816,7 @@ export function Customers({ profile }: { profile?: any }) {
                         type="text"
                         {...register("state")}
                         placeholder="EX: RS"
+                        maxLength={2}
                         className="w-full bg-card border border-border/50 rounded-xl py-2 px-4 text-sm text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
                       />
                     </div>
