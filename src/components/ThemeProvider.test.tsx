@@ -89,7 +89,7 @@ describe("ThemeProvider", () => {
 
     expect(screen.getByTestId("current-theme").textContent).toBe("light");
     expect(document.documentElement.classList.contains("light")).toBe(true);
-    expect(localStorage.getItem("naveo-ui-theme")).toBe("light");
+    expect(localStorage.getItem("netuno-ui-theme")).toBe("light");
 
     // Toggle de volta para dark
     await act(async () => {

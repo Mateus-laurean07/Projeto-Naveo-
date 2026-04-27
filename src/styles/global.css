@@ -32,11 +32,10 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 
-  --color-naveo-dark: #161824;
-  --color-naveo-card: #212529;
-  --color-naveo-lime: #d0f500;
-  --color-naveo-navy: #010cc8;
-  --color-naveo-accent: #1a7efb;
+  --color-netuno-dark: #161824;
+  --color-netuno-card: #212529;
+  --color-netuno-navy: #010cc8;
+  --color-netuno-accent: #1a7efb;
 
   @keyframes accordion-down {
     from {
@@ -99,7 +98,7 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%; /* #1a7efb Azul Naveo */
+    --primary: 221.2 83.2% 53.3%; /* #1a7efb Azul Netuno */
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -122,7 +121,7 @@
     --card-foreground: 210 40% 98%;
     --popover: 210 11% 15%;
     --popover-foreground: 210 40% 98%;
-    --primary: 213 96% 54%; /* #1a7efb Azul Vibrante Naveo */
+    --primary: 213 96% 54%; /* #1a7efb Azul Vibrante Netuno */
     --primary-foreground: 210 40% 98%;
     --secondary: 221.2 83.2% 53.3%;
     --secondary-foreground: 210 40% 98%;

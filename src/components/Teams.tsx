@@ -123,7 +123,7 @@ export function Teams({ profile: currentProfile }: { profile?: any }) {
     if (!activeProfile?.id) return;
 
     // 1. Presença em tempo real (Supabase Presence)
-    const presenceChannel = supabase.channel("naveo-presence", {
+    const presenceChannel = supabase.channel("netuno-presence", {
       config: { presence: { key: activeProfile.id } },
     });
 
@@ -591,7 +591,7 @@ export function Teams({ profile: currentProfile }: { profile?: any }) {
             Equipe & Colaboradores
           </h2>
           <p className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest leading-none mt-1">
-            Gerencie o acesso dos seus parceiros na Naveo
+            Gerencie o acesso dos seus parceiros no Netuno
           </p>
         </div>
         <button
@@ -823,10 +823,10 @@ export function Teams({ profile: currentProfile }: { profile?: any }) {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (
-                                    activeProfile?.role === "user" &&
-                                    !activeProfile?.is_pro
-                                  ) {
+                                  const isSuperAdmin = activeProfile?.role === "super_admin";
+                                  const isPro = activeProfile?.is_pro || currentProfile?.is_pro;
+                                  
+                                  if (!isPro && !isSuperAdmin) {
                                     toast.error(
                                       "Você não tem permissão para editar equipes. Assine o plano PRO.",
                                     );
@@ -841,9 +841,12 @@ export function Teams({ profile: currentProfile }: { profile?: any }) {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (activeProfile?.role === "user") {
+                                  const isSuperAdmin = activeProfile?.role === "super_admin";
+                                  const isPro = activeProfile?.is_pro || currentProfile?.is_pro;
+
+                                  if (!isPro && !isSuperAdmin) {
                                     toast.error(
-                                      "Você não tem permissão para remover equipes. Assine o plano PRO.",
+                                      "Você não tem permissão para remover membros. Assine o plano PRO.",
                                     );
                                     return;
                                   }

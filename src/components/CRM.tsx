@@ -497,7 +497,7 @@ function KanbanColumn({
   });
 
   return (
-    <div className="flex-1 min-w-[250px] max-w-[450px] bg-muted/40 rounded-2xl flex flex-col border border-border/50 shadow-sm max-h-full">
+    <div className="flex-1 min-w-[260px] max-w-[380px] bg-muted/20 rounded-[2rem] flex flex-col border border-border/50 shadow-sm transition-all duration-300">
       <div className="p-4 border-b border-border/50 flex justify-between items-center bg-muted/50 rounded-t-2xl">
         <div className="flex items-center gap-2">
           <span

@@ -212,10 +212,17 @@ function AdminFinanceiro({ profile }: { profile?: any }) {
     try {
       // 1. Planos
       const { data: dbPlans } = await supabase.from("plans").select("slug, name").order("sequence");
-      setPlans(Array.from(new Set([...(dbPlans || []).map(p => p.name), "Grátis", "Básico"])));
+      setPlans(Array.from(new Set([...(dbPlans || []).map((p: any) => p.name), "Grátis", "Básico"])));
+
+      // Identifica o dono primário (seja ele admin ou o próprio user)
+      const ownerId = profile?.admin_id || profile?.id;
 
       // 2. Tabela real
-      const { data: real } = await supabase.from("payments").select("*, customer:customers(name)").order("payment_date", { ascending: false });
+      let paymentsQuery = supabase.from("payments").select("*, customer:customers(name)").order("payment_date", { ascending: false });
+      if (profile?.role !== "super_admin" && ownerId) {
+        paymentsQuery = paymentsQuery.eq("customer_id", ownerId);
+      }
+      const { data: real } = await paymentsQuery;
       
       const res: PaymentRecord[] = [];
 
@@ -235,7 +242,11 @@ function AdminFinanceiro({ profile }: { profile?: any }) {
       }
 
       // 3. Fallback virtual (merged)
-      const { data: subs } = await supabase.from("subscriptions").select("*, profiles(*), plans(*)");
+      let subsQuery = supabase.from("subscriptions").select("*, profiles(*), plans(*)");
+      if (profile?.role !== "super_admin" && ownerId) {
+        subsQuery = subsQuery.eq("user_id", ownerId);
+      }
+      const { data: subs } = await subsQuery;
       const now = new Date();
       if (subs) {
         for (const s of subs) {
@@ -450,7 +461,7 @@ function AdminFinanceiro({ profile }: { profile?: any }) {
                       className={cn(
                         "w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all flex items-center justify-between",
                         filterPlan === opt.value
-                          ? "bg-[#ccff00] text-black"
+                          ? "bg-primary text-primary-foreground"
                           : "text-muted-foreground hover:bg-[#27282D] hover:text-white",
                       )}
                     >
@@ -715,7 +726,7 @@ function AdminFinanceiro({ profile }: { profile?: any }) {
                           {record.plan_name}
                         </span>
                         {record.isAuto && (
-                          <span className="text-[8px] font-black uppercase text-[#ccff00]/40 tracking-wider">
+                          <span className="text-[8px] font-black uppercase text-primary/40 tracking-wider">
                             Recorrência
                           </span>
                         )}
@@ -754,23 +765,27 @@ function AdminFinanceiro({ profile }: { profile?: any }) {
                         >
                           <Eye size={14} />
                         </button>
-                        <button
-                          onClick={() => {
-                            setEditingPayment(record);
-                            setIsModalOpen(true);
-                          }}
-                          className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-white hover:bg-[#27282D] rounded-md transition-all"
-                          title="Editar"
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleDeletePayment(record.id)}
-                          className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-500/10 rounded-md transition-all"
-                          title="Excluir"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        {profile?.role === "super_admin" && (
+                          <>
+                            <button
+                              onClick={() => {
+                                setEditingPayment(record);
+                                setIsModalOpen(true);
+                              }}
+                              className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-white hover:bg-[#27282D] rounded-md transition-all"
+                              title="Editar"
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleDeletePayment(record.id)}
+                              className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-500/10 rounded-md transition-all"
+                              title="Excluir"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>

@@ -121,7 +121,10 @@ export function Reports({ profile }: { profile?: any }) {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!teamOwnerId) return;
+    if (!teamOwnerId) {
+      toast.error("Erro: Equipe não identificada. Recarregue a página.");
+      return;
+    }
 
     const form = e.target as HTMLFormElement;
     const title = (form.elements.namedItem("title") as HTMLInputElement).value;
@@ -148,7 +151,8 @@ export function Reports({ profile }: { profile?: any }) {
       });
 
       if (error) {
-        toast.error("Erro ao criar relatório.");
+        console.error("Erro ao criar:", error);
+        toast.error("Erro ao criar relatório: " + error.message);
       } else {
         toast.success("Relatório criado!");
         setOpen(false);
@@ -260,7 +264,7 @@ export function Reports({ profile }: { profile?: any }) {
     const styles = getStatusStyles();
 
     return (
-      <div className="flex-shrink-0 w-[360px] bg-background/80 backdrop-blur-2xl rounded-[2rem] flex flex-col border border-border/50 shadow-2xl relative pb-2 max-h-[70vh] lg:max-h-[calc(100vh-360px)] min-h-[400px] overflow-hidden">
+      <div className="flex-shrink-0 w-full sm:w-[320px] lg:w-[360px] bg-background/80 backdrop-blur-2xl rounded-[2rem] flex flex-col border border-border/50 shadow-2xl relative pb-2 max-h-[70vh] lg:max-h-[calc(100vh-360px)] min-h-[400px] overflow-hidden">
         <div
           className="absolute inset-x-0 top-0 h-1 opacity-70"
           style={{ backgroundColor: styles.color }}
@@ -312,7 +316,8 @@ export function Reports({ profile }: { profile?: any }) {
                 <div className="flex-shrink-0 flex items-center gap-2">
                   {status === "Finalizado" ? (
                     <span className="text-[10px] uppercase font-black tracking-widest text-primary bg-primary/10 px-3 py-1.5 rounded-xl flex items-center gap-1.5 border border-primary/20">
-                      <Check className="w-3.5 h-3.5 shadow-sm" /> Missão Cumprida
+                      <Check className="w-3.5 h-3.5 shadow-sm" /> Missão
+                      Cumprida
                     </span>
                   ) : (
                     <button
@@ -376,12 +381,34 @@ export function Reports({ profile }: { profile?: any }) {
                   )}
 
                   {status === "Em Andamento" && (
+                    <>
+                      <button
+                        onClick={() => handleStatusChange(item.id, "Novo")}
+                        className="flex-[0.5] py-2.5 px-3 rounded-xl bg-muted/50 hover:bg-muted text-muted-foreground transition-all duration-300 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest shadow-sm"
+                        title="Voltar para Novo"
+                      >
+                        Voltar
+                      </button>
+                      <button
+                        onClick={() =>
+                          handleStatusChange(item.id, "Finalizado")
+                        }
+                        className="flex-1 py-2.5 px-3 rounded-xl bg-primary/10 hover:bg-primary hover:text-primary-foreground text-primary transition-all duration-300 flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/5 hover:shadow-primary/30"
+                        title="Marcar como Finalizado"
+                      >
+                        <CheckCircle className="w-4 h-4" /> Finalizar
+                      </button>
+                    </>
+                  )}
+                  {status === "Finalizado" && (
                     <button
-                      onClick={() => handleStatusChange(item.id, "Finalizado")}
-                      className="flex-1 py-2.5 px-3 rounded-xl bg-primary/10 hover:bg-primary hover:text-primary-foreground text-primary transition-all duration-300 flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/5 hover:shadow-primary/30"
-                      title="Marcar como Finalizado"
+                      onClick={() =>
+                        handleStatusChange(item.id, "Em Andamento")
+                      }
+                      className="flex-1 py-2 px-3 rounded-xl bg-muted/50 hover:bg-muted text-muted-foreground transition-all duration-300 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest shadow-sm"
+                      title="Voltar para Em Andamento"
                     >
-                      <CheckCircle className="w-4 h-4" /> Finalizar
+                      Voltar para Andamento
                     </button>
                   )}
                 </div>
@@ -414,18 +441,21 @@ export function Reports({ profile }: { profile?: any }) {
   };
 
   return (
-    <div className="space-y-8 flex flex-col animate-fade-in-up pb-8 overflow-y-auto w-full h-full lg:h-[calc(100vh-80px)] custom-scrollbar">
-      <div className="flex-shrink-0 relative overflow-hidden bg-card p-6 lg:p-10 rounded-[2.5rem] border border-border/50 shadow-2xl flex flex-col gap-8">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-accent/10 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8 flex flex-col animate-fade-in-up pb-8 overflow-y-auto w-full h-full lg:h-[calc(100vh-80px)] custom-scrollbar">
+      <div className="flex-shrink-0 relative overflow-hidden bg-card p-4 sm:p-6 lg:p-10 rounded-[2rem] sm:rounded-[2.5rem] border border-border/50 shadow-2xl flex flex-col gap-6 sm:gap-8">
+        <div className="absolute pointer-events-none top-0 right-0 w-80 h-80 bg-accent/10 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
         <div
-          className="absolute bottom-0 left-0 w-80 h-80 bg-primary/10 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse"
+          className="absolute pointer-events-none bottom-0 left-0 w-80 h-80 bg-primary/10 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse"
           style={{ animationDelay: "2s" }}
         ></div>
 
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-4xl font-black tracking-tighter text-foreground uppercase">
-              Relatórios <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Naveo</span>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tighter text-foreground uppercase leading-none">
+              Relatórios{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
+                Netuno
+              </span>
             </h1>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mt-2">
               Análise detalhada e acompanhamento de metas em tempo real
@@ -433,7 +463,7 @@ export function Reports({ profile }: { profile?: any }) {
           </div>
           <button
             onClick={() => setOpen(true)}
-            className="flex items-center gap-2 px-6 py-2.5 text-xs font-black uppercase tracking-widest bg-primary text-primary-foreground hover:scale-105 active:scale-95 rounded-xl transition-all shadow-lg shadow-primary/20"
+            className="flex items-center justify-center gap-2 px-6 py-3.5 text-xs font-black uppercase tracking-widest bg-primary text-primary-foreground hover:scale-105 active:scale-95 rounded-xl transition-all shadow-xl shadow-primary/20 w-fit"
           >
             <Plus className="w-4 h-4" /> Novo Relatório
           </button>

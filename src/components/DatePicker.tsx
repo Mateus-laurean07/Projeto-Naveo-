@@ -64,7 +64,7 @@ export function DatePicker({ value, onChange, maxDate }: DatePickerProps) {
         onClick={(e) => { e.preventDefault(); setIsOpen(!isOpen); }}
         className="h-full px-4 flex items-center justify-center min-w-[124px] outline-none select-none group"
       >
-        <span className="text-[12px] font-bold tracking-widest text-foreground group-hover:text-[#ccff00] transition-colors leading-[36px]">
+        <span className="text-[12px] font-bold tracking-widest text-foreground group-hover:text-primary transition-colors leading-[36px]">
           {`${value.getDate().toString().padStart(2, "0")}/${(value.getMonth() + 1).toString().padStart(2, "0")}/${value.getFullYear()}`}
         </span>
       </button>
@@ -124,7 +124,7 @@ export function DatePicker({ value, onChange, maxDate }: DatePickerProps) {
                   className={cn(
                     "w-full aspect-square flex items-center justify-center rounded-xl text-[12px] font-bold transition-all relative overflow-hidden group/day",
                     isSelected 
-                      ? "bg-[#ccff00] text-black shadow-[0_0_15px_rgba(204,255,0,0.3)]" 
+                      ? "bg-primary text-primary-foreground shadow-[0_0_15px_rgba(26,126,251,0.3)]" 
                       : isDisabled 
                         ? "text-muted-foreground/20 cursor-not-allowed border border-transparent" 
                         : "text-muted-foreground hover:bg-[#27282D] hover:text-white border border-transparent",
@@ -144,7 +144,7 @@ export function DatePicker({ value, onChange, maxDate }: DatePickerProps) {
                    onChange(new Date());
                    setIsOpen(false);
                 }}
-                className="text-[10px] uppercase tracking-widest font-black text-muted-foreground hover:text-[#ccff00] transition-colors"
+                className="text-[10px] uppercase tracking-widest font-black text-muted-foreground hover:text-primary transition-colors"
              >
                  Ir para Hoje
              </button>

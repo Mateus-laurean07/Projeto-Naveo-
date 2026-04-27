@@ -13,7 +13,7 @@ import { Settings } from "./Settings";
 import { AdminPanel } from "./AdminPanel";
 import { LoadingScreen } from "./LoadingScreen";
 import { Tasks } from "./Tasks";
-import { Tunoo } from "./Tunoo";
+import { Netuno } from "./Netuno";
 import { IdleScreen } from "./IdleScreen";
 import { toast } from "sonner";
 import { cn } from "../lib/utils";
@@ -29,13 +29,15 @@ export function Application({ session }: ApplicationProps) {
   const [profile, setProfile] = useState<any>(null);
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [projectSearchTerm, setProjectSearchTerm] = useState<string>("");
 
   // Efeito para simular carregamento fluido apenas em abas específicas
   const handleTabChange = (newTab: string) => {
     if (newTab === currentTab) return;
 
-    // Só mostra o Tsunami para "dashboard", "admin" e agora "tunoo"
-    const shouldShowTsunami = newTab === "dashboard" || newTab === "admin" || newTab === "tunoo";
+    // Só mostra o Tsunami para "dashboard", "admin" e agora "netuno"
+    const shouldShowTsunami =
+      newTab === "dashboard" || newTab === "admin" || newTab === "netuno";
 
     if (shouldShowTsunami) {
       setIsPageLoading(true);
@@ -49,6 +51,9 @@ export function Application({ session }: ApplicationProps) {
   };
 
   useEffect(() => {
+    let profileSubscription: any;
+    let subSyncChannel: any;
+
     async function initAuth() {
       try {
         const user = session?.user || (await supabase.auth.getUser()).data.user;
@@ -62,7 +67,8 @@ export function Application({ session }: ApplicationProps) {
         const metadata = user.user_metadata;
         setProfile({
           id: user.id,
-          full_name: metadata?.full_name || user.email?.split("@")[0] || "Usuário",
+          full_name:
+            metadata?.full_name || user.email?.split("@")[0] || "Usuário",
           role: metadata?.role || "admin",
           email: user.email,
           admin_id: metadata?.admin_id || null,
@@ -76,7 +82,10 @@ export function Application({ session }: ApplicationProps) {
           .maybeSingle();
 
         if (dbProfile?.is_active === false) {
-          localStorage.setItem("kicked_out_reason", "Acesso Bloqueado: Sua conta foi inativada pelo Administrador enquanto você estava usando o sistema.");
+          localStorage.setItem(
+            "kicked_out_reason",
+            "Acesso Bloqueado: Sua conta foi inativada pelo Administrador enquanto você estava usando o sistema.",
+          );
           await supabase.auth.signOut();
           setIsPageLoading(false);
           return;
@@ -93,51 +102,104 @@ export function Application({ session }: ApplicationProps) {
             dbProfile.admin_id = metadata.admin_id;
           }
 
+          const ownerId = dbProfile.admin_id || dbProfile.id;
+          const { data: sub } = await supabase
+            .from("subscriptions")
+            .select("*, plans(*)")
+            .eq("user_id", ownerId)
+            .in("status", ["active", "trialing", "trial", "past_due"])
+            .maybeSingle();
+
           const fullProfile = {
             ...dbProfile,
             email: dbProfile.email || user.email,
             admin_id: dbProfile.admin_id || metadata?.admin_id || null,
+            subscription: sub || null,
+            plan_name:
+              sub?.plans?.name ||
+              dbProfile.plan_name ||
+              (dbProfile.role === "super_admin" ? "Master" : "Grátis"),
+            is_pro: !!sub || dbProfile.is_pro || dbProfile.role === "super_admin",
           };
 
           setProfile(fullProfile);
           await supabase.from("profiles").update(updates).eq("id", user.id);
-        }
 
-        // 3. Subscribe to real-time profile changes
-        const profileSubscription = supabase
-          .channel(`profile-sync-${user.id}`)
-          .on(
-            "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "profiles",
-              filter: `id=eq.${user.id}`,
-            },
-            (payload) => {
-              if (payload.new) {
-                const updatedProfile = payload.new as any;
-                
-                // Kicks user out immediately in real-time if deactivated by admin
-                if (updatedProfile.is_active === false) {
-                  localStorage.setItem("kicked_out_reason", "Acesso Bloqueado: Sua conta acaba de ser inativada pelo Administrador.");
-                  supabase.auth.signOut();
-                  return;
+          // 3. Subscribe to real-time profile changes
+          profileSubscription = supabase
+            .channel(`profile-sync-${user.id}`)
+            .on(
+              "postgres_changes",
+              {
+                event: "*",
+                schema: "public",
+                table: "profiles",
+                filter: `id=eq.${user.id}`,
+              },
+              (payload) => {
+                if (payload.new) {
+                  const updatedProfile = payload.new as any;
+
+                  if (updatedProfile.is_active === false) {
+                    localStorage.setItem(
+                      "kicked_out_reason",
+                      "Acesso Bloqueado: Sua conta acaba de ser inativada pelo Administrador.",
+                    );
+                    supabase.auth.signOut();
+                    return;
+                  }
+
+                  setProfile((prev: any) => ({
+                    ...prev,
+                    ...updatedProfile,
+                    email: updatedProfile.email || user.email,
+                  }));
                 }
+              },
+            )
+            .subscribe();
 
-                setProfile((prev: any) => ({
-                  ...prev,
-                  ...updatedProfile,
-                  email: updatedProfile.email || user.email,
-                }));
-              }
-            },
-          )
-          .subscribe();
+          // 4. Subscribe to subscription changes
+          subSyncChannel = supabase
+            .channel(`subscription-sync-${user.id}`)
+            .on(
+              "postgres_changes",
+              {
+                event: "*",
+                schema: "public",
+                table: "subscriptions",
+                filter: `user_id=eq.${ownerId}`,
+              },
+              async () => {
+                const { data: newSub } = await supabase
+                  .from("subscriptions")
+                  .select("*, plans(*)")
+                  .eq("user_id", ownerId)
+                  .in("status", ["active", "trialing", "trial", "past_due"])
+                  .maybeSingle();
 
-        return () => {
-          supabase.removeChannel(profileSubscription);
-        };
+                setProfile((prev: any) => {
+                  const role = prev?.role;
+                  const manualPlan = prev?.plan_name;
+                  
+                  return {
+                    ...prev,
+                    subscription: newSub || null,
+                    plan_name:
+                      newSub?.plans?.name ||
+                      manualPlan ||
+                      (role === "super_admin" ? "Master" : "Grátis"),
+                    is_pro: !!newSub || prev?.is_pro || role === "super_admin",
+                  };
+                });
+
+                if (newSub) {
+                  toast.success(`Plano atualizado: ${newSub.plans?.name || "Ativo"}!`);
+                }
+              },
+            )
+            .subscribe();
+        }
       } catch (error) {
         console.error("Erro ao carregar dados iniciais:", error);
       } finally {
@@ -145,18 +207,19 @@ export function Application({ session }: ApplicationProps) {
       }
     }
 
-    const cleanup = initAuth();
+    initAuth();
 
     return () => {
-      cleanup.then((fn) => fn && fn());
+      if (profileSubscription) supabase.removeChannel(profileSubscription);
+      if (subSyncChannel) supabase.removeChannel(subSyncChannel);
     };
-  }, []);
+  }, [session]);
 
   useEffect(() => {
     if (!profile?.id) return;
 
     // Canal de presença global — único em toda a aplicação
-    const channel = supabase.channel("naveo-presence", {
+    const channel = supabase.channel("netuno-presence", {
       config: { presence: { key: profile.id } },
     });
 
@@ -200,6 +263,23 @@ export function Application({ session }: ApplicationProps) {
     };
   }, [profile?.id]);
 
+  // Efeito para auto-colapsar a sidebar em telas menores (notebooks)
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1280) {
+        setCollapsed(true);
+      } else {
+        setCollapsed(false);
+      }
+    };
+
+    // Executa uma vez no início
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const isSuperAdmin = profile?.role === "super_admin";
 
   return (
@@ -207,14 +287,14 @@ export function Application({ session }: ApplicationProps) {
       {isPageLoading && <LoadingScreen />}
       <IdleScreen />
 
-      <div className="flex h-screen bg-background overflow-hidden selection:bg-primary/30 selection:text-white transition-colors duration-700">
-        {/* Deep Ocean / Naveo Glow background highlights */}
+      <div className="flex h-screen bg-background overflow-hidden selection:bg-primary/30 selection:text-white transition-colors duration-300">
+        {/* Deep Ocean / Netuno Glow background highlights */}
         <div className="fixed inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-[-25%] left-[-25%] w-[60%] h-[60%] bg-primary/10 rounded-full blur-[200px] animate-lime-pulse opacity-40 dark:opacity-20" />
           <div className="absolute bottom-[-15%] right-[-10%] w-[50%] h-[50%] bg-primary/20 rounded-full blur-[180px] opacity-30 dark:opacity-10" />
         </div>
 
-        {currentTab !== "tunoo" && (
+        {currentTab !== "netuno" && (
           <Sidebar
             activeTab={currentTab}
             setTab={handleTabChange}
@@ -224,37 +304,60 @@ export function Application({ session }: ApplicationProps) {
           />
         )}
 
-        <div className="flex-1 flex flex-col min-w-0 bg-background/5 backdrop-blur-[100px] overflow-hidden z-10 transition-colors duration-700">
-          {currentTab !== "tunoo" && <Header profile={profile} setTab={handleTabChange} />}
-          <main className={cn("flex-1 relative overflow-hidden", currentTab !== "tunoo" && "overflow-y-auto custom-scrollbar")}>
-            <div className={cn(
-              "mx-auto space-y-6 animate-fade-in-up h-full",
-              currentTab !== "tunoo" ? "p-6 max-w-[1800px] 2xl:max-w-[95%]" : "p-0 max-w-none"
-            )}>
+        <div className="flex-1 flex flex-col min-w-0 bg-background/5 backdrop-blur-[100px] overflow-hidden z-10 transition-colors duration-300">
+          {currentTab !== "netuno" && (
+            <Header profile={profile} setTab={handleTabChange} />
+          )}
+          <main
+            className={cn(
+              "flex-1 relative overflow-hidden",
+              currentTab !== "netuno" && "overflow-y-auto custom-scrollbar",
+            )}
+          >
+            <div
+              className={cn(
+                "mx-auto space-y-6 animate-fade-in-up h-full transition-all duration-500",
+                currentTab !== "netuno"
+                  ? "p-4 sm:p-5 lg:p-6 max-w-full"
+                  : "p-0 max-w-none",
+              )}
+            >
               {currentTab === "dashboard" && (
                 <Dashboard setTab={handleTabChange} profile={profile} />
               )}
               {currentTab === "customers" && <Customers profile={profile} />}
               {currentTab === "crm" && <CRM profile={profile} />}
               {currentTab === "projects" && (
-                <Projects 
-                  profile={profile} 
+                <Projects
+                  profile={profile}
+                  initialSearchTerm={projectSearchTerm}
+                  onSearchCleared={() => setProjectSearchTerm("")}
                   onNavigateToTask={(taskId) => {
                     setSelectedTaskId(taskId);
                     handleTabChange("tasks");
-                  }} 
+                  }}
                 />
               )}
               {currentTab === "tasks" && (
-                <Tasks 
-                  profile={profile} 
-                  initialTaskId={selectedTaskId} 
-                  onTaskOpened={() => setSelectedTaskId(null)} 
+                <Tasks
+                  profile={profile}
+                  initialTaskId={selectedTaskId}
+                  onTaskOpened={() => setSelectedTaskId(null)}
                 />
               )}
-              {currentTab === "agenda" && <Agenda profile={profile} />}
+              {currentTab === "agenda" && (
+                <Agenda 
+                  profile={profile} 
+                  onNavigateToProject={(searchTerm) => {
+                    setProjectSearchTerm(searchTerm);
+                    handleTabChange("projects");
+                  }}
+                />
+              )}
               {currentTab === "reports" && <Reports profile={profile} />}
-              {currentTab === "tunoo" && <Tunoo profile={profile} setTab={handleTabChange} />}
+              {currentTab === "netuno" && (
+                <Netuno profile={profile} setTab={handleTabChange} />
+              )}
               {currentTab === "settings" && <Settings profile={profile} />}
               {currentTab === "admin" && isSuperAdmin && (
                 <AdminPanel profile={profile} />

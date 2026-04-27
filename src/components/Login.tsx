@@ -42,15 +42,17 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-export function Login({ 
-  onGoToRegister, 
-  externalError 
-}: { 
+export function Login({
+  onGoToRegister,
+  externalError,
+}: {
   onGoToRegister: () => void;
   externalError?: string | null;
 }) {
   const [showPassword, setShowPassword] = useState(false);
-  const [formError, setFormError] = useState<string | null>(externalError || null);
+  const [formError, setFormError] = useState<string | null>(
+    externalError || null,
+  );
   const [isVerifying, setIsVerifying] = useState(false);
 
   React.useEffect(() => {
@@ -79,7 +81,7 @@ export function Login({
   const onSubmit = async (data: LoginFormValues) => {
     setFormError(null);
     setIsVerifying(true);
-    
+
     const { data: authData, error } = await supabase.auth.signInWithPassword({
       email: data.email,
       password: data.password,
@@ -108,7 +110,7 @@ export function Login({
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Ondas de fundo Naveo */}
+      {/* Ondas de fundo Netuno */}
       <div className="auth-wave-container">
         <div className="auth-wave"></div>
         <div className="auth-wave"></div>
@@ -120,7 +122,7 @@ export function Login({
             <TridentLogo className="w-10 h-10 text-primary-foreground" />
           </div>
           <h2 className="text-3xl font-bold text-foreground mb-2 tracking-tight">
-            Central Naveo
+            Central Netuno
           </h2>
           <p className="text-muted-foreground">
             Acesse sua conta para continuar

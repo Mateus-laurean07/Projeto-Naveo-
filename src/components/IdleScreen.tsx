@@ -25,7 +25,13 @@ export function IdleScreen() {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => setIsIdle(true), IDLE_TIMEOUT);
     };
-    const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart"];
+    const events = [
+      "mousedown",
+      "mousemove",
+      "keypress",
+      "scroll",
+      "touchstart",
+    ];
     events.forEach((e) => document.addEventListener(e, handleActivity));
     timeoutId = setTimeout(() => setIsIdle(true), IDLE_TIMEOUT);
     return () => {
@@ -74,7 +80,9 @@ export function IdleScreen() {
     <div
       className={cn(
         "fixed inset-0 z-[9999] flex flex-col items-center justify-end overflow-hidden pointer-events-auto transition-all duration-1000",
-        showWaves ? "bg-[#020617]/85 backdrop-blur-md" : "bg-transparent backdrop-blur-0",
+        showWaves
+          ? "bg-[#020617]/85 backdrop-blur-md"
+          : "bg-transparent backdrop-blur-0",
       )}
       onClick={resetIdleTimer}
     >
@@ -89,14 +97,30 @@ export function IdleScreen() {
         <div
           className={cn(
             "absolute left-1/2 -translate-x-1/2 bottom-[30%] transition-all duration-[3000ms] ease-out flex flex-col items-center gap-8 z-50",
-            showWaves ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-40 scale-50",
+            showWaves
+              ? "opacity-100 translate-y-0 scale-100"
+              : "opacity-0 translate-y-40 scale-50",
           )}
         >
           <div className="relative group">
-            <div className="absolute -inset-20 rounded-full blur-[100px] animate-pulse" style={{ background: isDark ? "rgba(26,126,251,0.2)" : "rgba(26,126,251,0.25)" }} />
             <div
-              className={cn("relative flex items-center justify-center rounded-[4rem] overflow-hidden shadow-2xl", isDark ? "bg-primary" : "bg-[#1a7efb]")}
-              style={{ width: 280, height: 280, boxShadow: `0 0 60px ${c.glow}` }}
+              className="absolute -inset-20 rounded-full blur-[100px] animate-pulse"
+              style={{
+                background: isDark
+                  ? "rgba(26,126,251,0.2)"
+                  : "rgba(26,126,251,0.25)",
+              }}
+            />
+            <div
+              className={cn(
+                "relative flex items-center justify-center rounded-[4rem] overflow-hidden shadow-2xl",
+                isDark ? "bg-primary" : "bg-[#1a7efb]",
+              )}
+              style={{
+                width: 280,
+                height: 280,
+                boxShadow: `0 0 60px ${c.glow}`,
+              }}
             >
               <TridentLogo className="w-full h-full animate-bounce-slow" />
             </div>
@@ -107,10 +131,18 @@ export function IdleScreen() {
               className="text-6xl font-black tracking-[-0.05em] uppercase"
               style={{ color: "#fff", textShadow: `0 0 30px ${c.shadow}` }}
             >
-              NAVEO
+              NETUNO
             </h1>
-            <div className="w-32 h-0.5 my-5" style={{ background: `linear-gradient(to right, transparent, ${c.text}, transparent)` }} />
-            <p className="text-xs font-black uppercase tracking-[0.8em] animate-pulse" style={{ color: "rgba(26,126,251,0.5)" }}>
+            <div
+              className="w-32 h-0.5 my-5"
+              style={{
+                background: `linear-gradient(to right, transparent, ${c.text}, transparent)`,
+              }}
+            />
+            <p
+              className="text-xs font-black uppercase tracking-[0.8em] animate-pulse"
+              style={{ color: "rgba(26,126,251,0.5)" }}
+            >
               Clique para continuar
             </p>
           </div>
@@ -118,47 +150,103 @@ export function IdleScreen() {
 
         {/* === SURF WAVE STACK === */}
         <div className="relative w-full h-[75vh] overflow-hidden">
-
           {/* ONDA 1 - Swell profundo */}
-          <svg className="surf-wave-1 absolute bottom-0 w-full h-full" viewBox="0 0 1440 200" preserveAspectRatio="none">
-            <path d="M0,120 C180,140 360,80 540,100 C720,120 900,160 1080,130 C1260,100 1350,80 1440,90 L1440,200 L0,200 Z" style={{ fill: c.w1 }} />
+          <svg
+            className="surf-wave-1 absolute bottom-0 w-full h-full"
+            viewBox="0 0 1440 200"
+            preserveAspectRatio="none"
+          >
+            <path
+              d="M0,120 C180,140 360,80 540,100 C720,120 900,160 1080,130 C1260,100 1350,80 1440,90 L1440,200 L0,200 Z"
+              style={{ fill: c.w1 }}
+            />
           </svg>
 
           {/* ONDA 2 - Meio com swell */}
-          <svg className="surf-wave-2 absolute bottom-0 w-full h-full" viewBox="0 0 1440 200" preserveAspectRatio="none">
-            <path d="M0,100 C120,70 240,130 400,90 C560,50 720,140 900,110 C1080,80 1260,130 1440,100 L1440,200 L0,200 Z" style={{ fill: c.w2 }} />
+          <svg
+            className="surf-wave-2 absolute bottom-0 w-full h-full"
+            viewBox="0 0 1440 200"
+            preserveAspectRatio="none"
+          >
+            <path
+              d="M0,100 C120,70 240,130 400,90 C560,50 720,140 900,110 C1080,80 1260,130 1440,100 L1440,200 L0,200 Z"
+              style={{ fill: c.w2 }}
+            />
           </svg>
 
           {/* ONDA 3 - Primeiro plano, mais dinâmica */}
-          <svg className="surf-wave-3 absolute bottom-0 w-full h-full" viewBox="0 0 1440 200" preserveAspectRatio="none">
-            <path d="M0,80 C200,40 300,130 500,70 C700,10 850,150 1050,80 C1250,10 1380,100 1440,70 L1440,200 L0,200 Z" style={{ fill: c.w3 }} />
+          <svg
+            className="surf-wave-3 absolute bottom-0 w-full h-full"
+            viewBox="0 0 1440 200"
+            preserveAspectRatio="none"
+          >
+            <path
+              d="M0,80 C200,40 300,130 500,70 C700,10 850,150 1050,80 C1250,10 1380,100 1440,70 L1440,200 L0,200 Z"
+              style={{ fill: c.w3 }}
+            />
           </svg>
 
           {/* ONDA SURF - A quebrante / foam (espuma de cima) */}
-          <svg className="surf-wave-break absolute bottom-0 w-full h-full" viewBox="0 0 1440 200" preserveAspectRatio="none">
+          <svg
+            className="surf-wave-break absolute bottom-0 w-full h-full"
+            viewBox="0 0 1440 200"
+            preserveAspectRatio="none"
+          >
             {/* Corpo principal da onda de surf */}
-            <path d="M0,55 C100,25 200,65 320,35 C440,5 560,75 700,40 C840,5 960,80 1100,45 C1240,10 1360,60 1440,45 L1440,200 L0,200 Z" style={{ fill: c.foam, opacity: 0.6 }} />
+            <path
+              d="M0,55 C100,25 200,65 320,35 C440,5 560,75 700,40 C840,5 960,80 1100,45 C1240,10 1360,60 1440,45 L1440,200 L0,200 Z"
+              style={{ fill: c.foam, opacity: 0.6 }}
+            />
             {/* Crista da onda (foam line) */}
-            <path d="M0,55 C100,25 200,65 320,35 C440,5 560,75 700,40 C840,5 960,80 1100,45 C1240,10 1360,60 1440,45" fill="none" stroke={c.foam} strokeWidth="3" opacity="0.8" />
+            <path
+              d="M0,55 C100,25 200,65 320,35 C440,5 560,75 700,40 C840,5 960,80 1100,45 C1240,10 1360,60 1440,45"
+              fill="none"
+              stroke={c.foam}
+              strokeWidth="3"
+              opacity="0.8"
+            />
           </svg>
 
           {/* SPRAY - Espuma extra nas cristas */}
-          <svg className="surf-spray absolute bottom-0 w-full h-full" viewBox="0 0 1440 200" preserveAspectRatio="none">
-            <path d="M0,50 C80,20 160,55 280,28 C400,1 500,70 640,35 C780,0 900,75 1040,40 C1180,5 1320,55 1440,40 L1440,200 L0,200 Z" style={{ fill: "rgba(255,255,255,0.15)" }} />
+          <svg
+            className="surf-spray absolute bottom-0 w-full h-full"
+            viewBox="0 0 1440 200"
+            preserveAspectRatio="none"
+          >
+            <path
+              d="M0,50 C80,20 160,55 280,28 C400,1 500,70 640,35 C780,0 900,75 1040,40 C1180,5 1320,55 1440,40 L1440,200 L0,200 Z"
+              style={{ fill: "rgba(255,255,255,0.15)" }}
+            />
           </svg>
 
           {/* OCEANO PROFUNDO */}
-          <div className="absolute bottom-0 left-0 right-0 h-[38vh]" style={{ background: `linear-gradient(to top, ${c.deep}, ${c.mid}, ${c.surface})` }}>
+          <div
+            className="absolute bottom-0 left-0 right-0 h-[38vh]"
+            style={{
+              background: `linear-gradient(to top, ${c.deep}, ${c.mid}, ${c.surface})`,
+            }}
+          >
             {/* Brilho da superfície */}
-            <div className="absolute top-0 left-0 right-0 h-[2px] blur-sm" style={{ background: c.glow }} />
+            <div
+              className="absolute top-0 left-0 right-0 h-[2px] blur-sm"
+              style={{ background: c.glow }}
+            />
             {/* Brilho interno */}
-            <div className="absolute inset-0 animate-pulse" style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.07) 0%, transparent 60%)" }} />
+            <div
+              className="absolute inset-0 animate-pulse"
+              style={{
+                background:
+                  "radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.07) 0%, transparent 60%)",
+              }}
+            />
           </div>
         </div>
       </div>
 
       {/* ANIMAÇÕES CSS de Surf */}
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         /* Swell lento de fundo */
         @keyframes surf-swell {
           0%   { transform: translateX(0) scaleY(1); }
@@ -211,7 +299,9 @@ export function IdleScreen() {
         .surf-wave-3   { animation: surf-break   8s ease-in-out infinite; transform-origin: center bottom; }
         .surf-wave-break { animation: surf-crash  6s ease-in-out infinite; transform-origin: center bottom; }
         .surf-spray    { animation: surf-spray   4s ease-in-out infinite; transform-origin: center bottom; }
-      ` }} />
+      `,
+        }}
+      />
     </div>
   );
 }

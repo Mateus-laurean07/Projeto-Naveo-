@@ -254,48 +254,47 @@ export function Customers({ profile }: { profile?: any }) {
   });
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-card rounded-2xl p-6 border border-border/50 shadow-xl relative overflow-hidden">
-          <h3 className="text-muted-foreground font-medium mb-1">
-            Total de Clientes
-          </h3>
-          <p className="text-3xl font-bold text-foreground tracking-tight">
-            {customers.length}
+    <>
+      <div className="space-y-6 animate-fade-in-up">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-2">
+        <div className="space-y-1">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tighter text-foreground uppercase leading-none">
+            Clientes
+          </h1>
+          <p className="text-muted-foreground font-medium text-sm sm:text-base">
+            Gerencie sua base de contatos e parceiros de negócio
           </p>
         </div>
-      </div>
-
-      <div className="bg-card border border-border/50 rounded-2xl shadow-xl overflow-hidden">
-        <div className="p-6 border-b border-border/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h2 className="text-xl font-bold text-foreground">
-              Listagem de Clientes
-            </h2>
+        <div className="flex flex-wrap lg:flex-nowrap items-center gap-4 w-full lg:w-auto">
+          <div className="bg-card px-4 sm:px-6 py-2 sm:py-3 rounded-2xl border border-border/50 shadow-xl relative overflow-hidden flex-1 sm:flex-none sm:min-w-[160px]">
+             <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 block mb-0.5 sm:mb-1">Total Ativos</span>
+             <span className="text-xl sm:text-2xl font-black text-foreground">{customers.length}</span>
           </div>
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Buscar clientes..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-background border border-border rounded-xl py-2 pl-9 pr-4 text-sm text-foreground focus:outline-none"
-              />
-            </div>
-            <Dialog.Root open={isModalOpen} onOpenChange={(open) => {
-              setModalOpen(open);
-              if (!open) {
-                reset();
-              }
-            }}>
-              <Dialog.Trigger asChild>
-                <button className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-primary text-primary-foreground font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-primary/20 active:scale-95">
-                  <UserPlus className="w-4 h-4" /> Novo Cliente
-                </button>
-              </Dialog.Trigger>
-              <Dialog.Portal>
+          
+          <div className="relative flex-1 sm:min-w-[240px] max-w-sm">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
+            <input
+              type="text"
+              placeholder="Buscar clientes..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-card border border-border/50 rounded-2xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all font-medium placeholder:text-muted-foreground/40 shadow-xl"
+            />
+          </div>
+
+          <Dialog.Root open={isModalOpen} onOpenChange={(open) => {
+            setModalOpen(open);
+            if (!open) {
+              reset();
+            }
+          }}>
+            <Dialog.Trigger asChild>
+              <button className="flex items-center gap-2 px-5 py-3 sm:py-4 rounded-2xl bg-primary text-primary-foreground font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-primary/20 active:scale-95 whitespace-nowrap">
+                <UserPlus className="w-4 h-4" /> Novo Cliente
+              </button>
+            </Dialog.Trigger>
+            <Dialog.Portal>
+
                 <Dialog.Overlay className="fixed inset-0 bg-[#000000]/60 backdrop-blur-sm z-50 animate-fade-in" />
                 <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-card rounded-2xl shadow-2xl border border-border/50 z-50 max-h-[90vh] overflow-y-auto">
                   <div className="p-6 border-b border-border/50 flex justify-between items-center">
@@ -505,19 +504,19 @@ export function Customers({ profile }: { profile?: any }) {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-background/50 border-b border-border/50">
-                <th className="py-4 px-6 text-xs font-semibold text-muted-foreground uppercase">
+                <th className="py-4 px-6 text-xs font-semibold text-muted-foreground uppercase min-w-[200px]">
                   Nome
                 </th>
-                <th className="py-4 px-6 text-xs font-semibold text-muted-foreground uppercase">
+                <th className="py-4 px-6 text-xs font-semibold text-muted-foreground uppercase min-w-[150px]">
                   Contato
                 </th>
-                <th className="py-4 px-6 text-xs font-semibold text-muted-foreground uppercase">
+                <th className="py-4 px-6 text-xs font-semibold text-muted-foreground uppercase min-w-[150px]">
                   Empresa
                 </th>
-                <th className="py-4 px-6 text-xs font-semibold text-muted-foreground uppercase">
+                <th className="py-4 px-6 text-xs font-semibold text-muted-foreground uppercase min-w-[120px]">
                   Status
                 </th>
-                <th className="py-4 px-6 text-xs font-semibold text-muted-foreground uppercase text-right">
+                <th className="py-4 px-6 text-xs font-semibold text-muted-foreground uppercase text-right min-w-[150px]">
                   Ações
                 </th>
               </tr>
@@ -629,6 +628,7 @@ export function Customers({ profile }: { profile?: any }) {
           </table>
         </div>
       </div>
+
       <Dialog.Root
         open={!!customerToEdit}
         onOpenChange={(open) => {
@@ -974,6 +974,6 @@ export function Customers({ profile }: { profile?: any }) {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
-    </div>
+    </>
   );
 }

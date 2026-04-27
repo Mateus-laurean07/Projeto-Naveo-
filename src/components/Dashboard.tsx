@@ -266,7 +266,7 @@ export function Dashboard({
         </button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {[
           {
             title: "Faturamento do mês",
@@ -356,22 +356,22 @@ export function Dashboard({
                       </div>
                     </>
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground font-bold border-2 border-dashed border-border/40 rounded-full">
+                    <div className="w-full h-full flex items-center justify-center text-[9px] text-muted-foreground font-bold border-2 border-dashed border-border/40 rounded-full">
                       SEM DADOS
                     </div>
                   )}
                 </div>
 
-                <h4 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-3">
+                <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">
                   Clientes Ativos / Inativos
                 </h4>
 
-                <div className="flex gap-4 w-full">
-                  <div className="flex-1 flex flex-col items-center p-2 rounded-xl bg-primary/5 border border-primary/10">
-                    <span className="text-[9px] font-black text-primary uppercase">
+                <div className="flex gap-2 w-full">
+                  <div className="flex-1 flex flex-col items-center p-2 rounded-lg bg-primary/5 border border-primary/10">
+                    <span className="text-[8px] font-black text-primary uppercase">
                       Ativos
                     </span>
-                    <span className="text-sm font-bold text-foreground">
+                    <span className="text-xs font-bold text-foreground">
                       {metrics.clientesAtivos}
                     </span>
                   </div>
@@ -391,7 +391,7 @@ export function Dashboard({
           return (
             <div
               key={i}
-              className="bg-card/40 backdrop-blur-xl p-6 rounded-3xl border border-border/40 shadow-xl flex flex-col justify-between group hover:border-primary/40 transition-all duration-500 hover:translate-y-[-4px]"
+              className="bg-card/40 backdrop-blur-xl p-6 rounded-3xl border border-border/40 shadow-xl flex flex-col justify-between group hover:border-primary/40 transition-colors duration-200 hover:translate-y-[-2px]"
             >
               <div>
                 <div
@@ -400,7 +400,7 @@ export function Dashboard({
                   <metric.icon className="w-6 h-6" />
                 </div>
                 <h3
-                  className={`text-4xl font-black tracking-tighter ${metric.valueColor} truncate drop-shadow-sm`}
+                  className={`text-2xl sm:text-3xl lg:text-4xl font-black tracking-tighter ${metric.valueColor} truncate drop-shadow-sm`}
                 >
                   {metric.value}
                 </h3>

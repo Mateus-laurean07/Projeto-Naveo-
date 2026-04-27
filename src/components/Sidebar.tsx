@@ -68,7 +68,7 @@ export function Sidebar({
     },
     { id: "agenda", label: "Agenda", icon: Calendar, allowed: true },
     { id: "reports", label: "Relatórios", icon: FileText, allowed: true },
-    { id: "tunoo", label: "Tunoo", icon: Rocket, allowed: true },
+    { id: "netuno", label: "Netuno", icon: Rocket, allowed: true },
   ];
 
   const adminMenuItems = [
@@ -87,46 +87,56 @@ export function Sidebar({
   return (
     <div
       className={cn(
-        "relative flex flex-col h-screen bg-card border-r border-border/40 transition-all duration-500 ease-in-out z-40 shadow-2xl",
-        collapsed ? "w-20" : "w-72",
+        "relative flex flex-col h-screen bg-card border-r border-border/40 transition-[width] duration-300 ease-in-out z-40 shadow-2xl",
+        collapsed ? "w-20" : "w-64",
       )}
     >
       {/* Visual Identity Area */}
-      <div className="flex items-center justify-between p-7 overflow-hidden">
+      <div
+        className={cn(
+          "flex items-center justify-between p-4 sm:p-6 lg:p-7 overflow-hidden transition-all duration-300",
+          collapsed && "px-4",
+        )}
+      >
         {!collapsed && (
           <div
-            className="flex items-center gap-3 group cursor-pointer"
+            className="flex items-center gap-2 sm:gap-3 group cursor-pointer"
             onClick={() => setTab("dashboard")}
           >
             <div
               className={cn(
-                "w-12 h-12 flex items-center justify-center rounded-xl overflow-hidden transition-all duration-300 group-hover:scale-110",
-                theme === "dark" ? "bg-primary" : "bg-[#1a7efb]"
+                "w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl overflow-hidden transition-all duration-300 group-hover:scale-110 shadow-lg",
+                theme === "dark"
+                  ? "bg-primary shadow-primary/20"
+                  : "bg-[#1a7efb] shadow-blue-500/20",
               )}
             >
               <TridentLogo className="w-full h-full" />
             </div>
             <div className="flex flex-col">
-              <span className="font-black text-2xl tracking-tighter text-foreground leading-none drop-shadow-[0_0_15px_rgba(26,126,251,0.3)]">
-                NAVEO
+              <span className="font-black text-xl sm:text-2xl tracking-tighter text-foreground leading-none drop-shadow-[0_0_15px_rgba(26,126,251,0.3)]">
+                NETUNO
               </span>
             </div>
           </div>
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="p-2.5 rounded-2xl hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all duration-300 backdrop-blur-md border border-transparent hover:border-primary/20"
+          className="p-2 sm:p-2.5 rounded-2xl hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors duration-200 backdrop-blur-md border border-transparent hover:border-primary/20"
         >
           {collapsed ? (
-            <ChevronRight size={22} className="animate-pulse" />
+            <ChevronRight
+              size={20}
+              className="sm:w-[22px] sm:h-[22px] animate-pulse"
+            />
           ) : (
-            <ChevronLeft size={22} />
+            <ChevronLeft size={20} className="sm:w-[22px] sm:h-[22px]" />
           )}
         </button>
       </div>
 
       {/* Main Nav Items */}
-      <nav className="flex-1 px-4 space-y-1 mt-4 overflow-y-auto custom-scrollbar">
+      <nav className="flex-1 px-3 sm:px-4 space-y-1 mt-2 sm:mt-4 overflow-y-auto custom-scrollbar">
         {mainMenuItems
           .filter((i) => i.allowed)
           .map((item) => {

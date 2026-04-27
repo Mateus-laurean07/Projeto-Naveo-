@@ -25,8 +25,8 @@ export const TridentLogo = ({ className }: { className?: string }) => {
       className={cn("transition-all duration-300", className)}
       style={{
         backgroundColor: isDark ? "#000000" : "#FFFFFF",
-        WebkitMaskImage: "url('/logo-original-1.png')",
-        maskImage: "url('/logo-original-1.png')",
+        WebkitMaskImage: "url('/netuno-logo.png')",
+        maskImage: "url('/netuno-logo.png')",
         WebkitMaskSize: "contain",
         maskSize: "contain",
         WebkitMaskPosition: "center",

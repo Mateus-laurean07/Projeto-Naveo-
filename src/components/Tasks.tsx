@@ -246,7 +246,7 @@ function SortableTaskCard({
                 {task.comments_data.length}
                 {(() => {
                   const seenData = JSON.parse(
-                    localStorage.getItem("@Naveo:comments_seen") || "{}",
+                    localStorage.getItem("@Netuno:comments_seen") || "{}",
                   );
                   const lastSeenCount = seenData[task.id] || 0;
                   if (task.comments_data.length > lastSeenCount) {
@@ -1259,6 +1259,15 @@ export function Tasks({
     for (let i = 1; i <= daysInMonth; i++) {
       days.push(new Date(year, month, i));
     }
+    
+    // Fill the remaining days to complete the last week
+    const remainder = days.length % 7;
+    if (remainder > 0) {
+      for (let i = 0; i < 7 - remainder; i++) {
+        days.push(null);
+      }
+    }
+    
     return days;
   }, [currentMonth]);
 
@@ -1293,10 +1302,10 @@ export function Tasks({
   const updateCommentSeen = (taskId: string, count: number) => {
     try {
       const seenData = JSON.parse(
-        localStorage.getItem("@Naveo:comments_seen") || "{}",
+        localStorage.getItem("@Netuno:comments_seen") || "{}",
       );
       seenData[taskId] = count;
-      localStorage.setItem("@Naveo:comments_seen", JSON.stringify(seenData));
+      localStorage.setItem("@Netuno:comments_seen", JSON.stringify(seenData));
     } catch (e) {}
   };
 
@@ -1376,7 +1385,7 @@ export function Tasks({
       setTasks(validTasks);
 
       const tagsMap = new Map();
-      const deletedTagsRaw = localStorage.getItem("@Naveo:deleted_tags");
+      const deletedTagsRaw = localStorage.getItem("@Netuno:deleted_tags");
       const deletedTags = deletedTagsRaw ? JSON.parse(deletedTagsRaw) : [];
 
       DEFAULT_TAGS.forEach((tag) => {
@@ -1384,7 +1393,7 @@ export function Tasks({
       });
 
       try {
-        const local = localStorage.getItem("@Naveo:custom_tags");
+        const local = localStorage.getItem("@Netuno:custom_tags");
         if (local) {
           const parsed = JSON.parse(local);
           if (Array.isArray(parsed)) {
@@ -2556,17 +2565,17 @@ export function Tasks({
               task={selectedTask}
               availableTags={availableTags}
               onDeleteGlobalTag={async (tagToDelete) => {
-                const deletedRaw = localStorage.getItem("@Naveo:deleted_tags");
+                const deletedRaw = localStorage.getItem("@Netuno:deleted_tags");
                 const deletedList = deletedRaw ? JSON.parse(deletedRaw) : [];
                 if (!deletedList.includes(tagToDelete.text)) {
                   deletedList.push(tagToDelete.text);
                   localStorage.setItem(
-                    "@Naveo:deleted_tags",
+                    "@Netuno:deleted_tags",
                     JSON.stringify(deletedList),
                   );
                 }
 
-                const local = localStorage.getItem("@Naveo:custom_tags");
+                const local = localStorage.getItem("@Netuno:custom_tags");
                 if (local) {
                   const parsed = JSON.parse(local);
                   const filtered = parsed.filter(
@@ -2574,7 +2583,7 @@ export function Tasks({
                       t.id !== tagToDelete.id && t.text !== tagToDelete.text,
                   );
                   localStorage.setItem(
-                    "@Naveo:custom_tags",
+                    "@Netuno:custom_tags",
                     JSON.stringify(filtered),
                   );
                 }
@@ -2680,7 +2689,7 @@ export function Tasks({
                     });
                     const updated = Array.from(map.values());
                     localStorage.setItem(
-                      "@Naveo:custom_tags",
+                      "@Netuno:custom_tags",
                       JSON.stringify(updated),
                     );
                     return updated;
@@ -2922,7 +2931,7 @@ export function Tasks({
                                       {(() => {
                                         const seenData = JSON.parse(
                                           localStorage.getItem(
-                                            "@Naveo:comments_seen",
+                                            "@Netuno:comments_seen",
                                           ) || "{}",
                                         );
                                         const lastSeenCount =
@@ -2975,9 +2984,9 @@ export function Tasks({
             })}
           </div>
         ) : (
-          <div className="h-full flex flex-col gap-6 animate-in fade-in duration-500">
+          <div className="flex flex-col gap-4 animate-in fade-in duration-500 pb-6 h-full overflow-y-auto custom-scrollbar pr-2">
             {/* Header do Calendário */}
-            <div className="flex items-center justify-between bg-card/40 backdrop-blur-xl border border-border/40 rounded-[2rem] p-6 shadow-xl">
+            <div className="flex items-center justify-between bg-card/40 backdrop-blur-xl border border-border/40 rounded-[2rem] p-5 shadow-xl shrink-0">
               <div className="flex flex-col gap-1">
                 <h2 className="text-2xl font-black text-foreground uppercase tracking-tighter">
                   {currentMonth.toLocaleDateString("pt-BR", {
@@ -2991,16 +3000,15 @@ export function Tasks({
                   </span>
                   <div className="flex items-center gap-3 border-l border-border/40 pl-4">
                     <div className="flex items-center gap-1.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
                       <span className="text-[8px] font-black uppercase text-muted-foreground/40">
-                        Data de Entrega
+                        Tarefa com prazo
                       </span>
                     </div>
                   </div>
                 </div>
               </div>
-
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 shrink-0">
                 <button
                   onClick={() => setCurrentMonth(new Date())}
                   className="px-4 py-2 bg-foreground/5 hover:bg-foreground/10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
@@ -3009,29 +3017,13 @@ export function Tasks({
                 </button>
                 <div className="flex items-center gap-1 bg-foreground/5 p-1 rounded-xl">
                   <button
-                    onClick={() =>
-                      setCurrentMonth(
-                        new Date(
-                          currentMonth.getFullYear(),
-                          currentMonth.getMonth() - 1,
-                          1,
-                        ),
-                      )
-                    }
+                    onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
                     className="p-2 hover:bg-foreground/10 rounded-lg transition-colors"
                   >
                     <ChevronDown className="w-4 h-4 rotate-90" />
                   </button>
                   <button
-                    onClick={() =>
-                      setCurrentMonth(
-                        new Date(
-                          currentMonth.getFullYear(),
-                          currentMonth.getMonth() + 1,
-                          1,
-                        ),
-                      )
-                    }
+                    onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
                     className="p-2 hover:bg-foreground/10 rounded-lg transition-colors"
                   >
                     <ChevronDown className="w-4 h-4 -rotate-90" />
@@ -3040,83 +3032,113 @@ export function Tasks({
               </div>
             </div>
 
-            {/* Grid do Calendário */}
-            <div className="flex-1 grid grid-cols-7 grid-rows-[auto_1fr] bg-card/40 backdrop-blur-xl border border-border/40 rounded-[2.5rem] overflow-hidden shadow-2xl">
-              {/* Dias da Semana */}
-              {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((d) => (
-                <div
-                  key={d}
-                  className="py-4 text-center border-b border-border/20"
-                >
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">
-                    {d}
-                  </span>
-                </div>
-              ))}
+            {/* Grid do Calendário — cresce naturalmente, sem cortar dias */}
+            <div className="bg-card/40 backdrop-blur-xl border border-border/40 rounded-[2.5rem] overflow-hidden shadow-2xl shrink-0">
+              {/* Cabeçalho dias da semana */}
+              <div className="grid grid-cols-7 border-b border-border/40 bg-muted/20">
+                {["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"].map((d) => (
+                  <div key={d} className="py-4 text-center">
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-foreground/70 hidden sm:inline-block">
+                      {d}
+                    </span>
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-foreground/70 sm:hidden">
+                      {d.slice(0,3)}
+                    </span>
+                  </div>
+                ))}
+              </div>
 
-              {/* Dias do Mês */}
-              <div className="col-span-7 grid grid-cols-7 h-full min-h-0">
+              {/* Dias do mês */}
+              <div className="grid grid-cols-7 bg-border/20 gap-[1px]">
                 {calendarDays.map((day, i) => {
-                  const dateStr = day ? day.toISOString().split("T")[0] : "";
+                  const dateStr = day
+                    ? `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`
+                    : "";
                   const data = day ? tasksByDate[dateStr] : null;
-                  const isToday =
-                    day && new Date().toISOString().split("T")[0] === dateStr;
+                  const n = new Date();
+                  const todayStr = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`;
+                  const isToday = day && todayStr === dateStr;
+
+                  // Se não for o último mês, mas estiver vazio
+                  const cellClasses = cn(
+                    "min-h-[110px] p-2 flex flex-col gap-2 transition-all relative overflow-hidden group/cell",
+                    day ? "bg-card hover:bg-muted/5 cursor-pointer" : "bg-card/50",
+                  );
 
                   return (
                     <div
                       key={day ? dateStr : `empty-${i}`}
-                      className={cn(
-                        "min-h-[100px] border-r border-b border-border/20 p-2 transition-colors hover:bg-foreground/[0.02] flex flex-col gap-1.5",
-                        (i + 1) % 7 === 0 && "border-r-0",
-                      )}
+                      className={cellClasses}
                     >
                       {day && (
                         <>
-                          <div className="flex items-center justify-between p-1">
-                            <span
-                              className={cn(
-                                "text-[11px] font-black w-6 h-6 flex items-center justify-center rounded-lg",
-                                isToday
-                                  ? "bg-primary text-white shadow-lg shadow-primary/20"
-                                  : "text-muted-foreground/60",
-                              )}
-                            >
+                          <div className="flex items-center justify-between px-1.5 pt-1.5 mb-1 relative z-10">
+                            <span className={cn(
+                              "text-sm font-black w-8 h-8 flex items-center justify-center rounded-xl transition-all",
+                              isToday
+                                ? "bg-primary text-white shadow-[0_0_15px_rgba(var(--primary),0.5)] transform scale-110"
+                                : "text-muted-foreground group-hover/cell:text-foreground"
+                            )}>
                               {day.getDate()}
                             </span>
-                            {data && (
-                              <span className="text-[8px] font-black text-muted-foreground/30 px-1.5 py-0.5 rounded-md bg-muted/10 border border-border/20">
-                                {data.all.length}
+                            {data && data.all.length > 0 && (
+                              <span className="text-[9px] font-black text-primary px-2 py-0.5 rounded-lg bg-primary/10 border border-primary/20 shadow-sm">
+                                {data.all.length} {data.all.length === 1 ? 'tarefa' : 'tarefas'}
                               </span>
                             )}
                           </div>
 
-                          <div className="flex-1 overflow-y-auto custom-scrollbar-thin space-y-1 pr-1">
-                            {data?.all.slice(0, 3).map((task) => {
-                              return (
-                                <button
-                                  key={task.id}
-                                  onClick={() => handleSelectTask(task)}
-                                  className="w-full text-left p-1.5 rounded-lg bg-card/60 border border-border/40 hover:border-primary/40 hover:shadow-md transition-all group flex items-center gap-2"
-                                >
-                                  <div className="w-1 h-3 rounded-full shrink-0 bg-amber-500" />
-                                  <span className="text-[9px] font-bold text-foreground/80 truncate group-hover:text-primary transition-colors">
+                          <div className="flex flex-col gap-1.5 relative z-10 flex-1">
+                            {data?.all.slice(0, 3).map((task) => (
+                              <button
+                                key={task.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSelectTask(task);
+                                }}
+                                className={cn(
+                                  "w-full text-left px-2.5 py-1.5 rounded-lg border transition-all hover:-translate-y-0.5 hover:shadow-md flex flex-col gap-1",
+                                  task.priority === "Alta"
+                                    ? "bg-red-500/10 border-red-500/20 hover:border-red-500/50 hover:shadow-red-500/10"
+                                    : task.priority === "Média"
+                                      ? "bg-amber-500/10 border-amber-500/20 hover:border-amber-500/50 hover:shadow-amber-500/10"
+                                      : "bg-primary/5 border-primary/20 hover:border-primary/50 hover:shadow-primary/10"
+                                )}
+                              >
+                                <div className="flex items-center gap-1.5 w-full">
+                                  <div className={cn(
+                                    "w-1.5 h-1.5 rounded-full shrink-0",
+                                    task.priority === "Alta" ? "bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]" : 
+                                    task.priority === "Média" ? "bg-amber-500 shadow-[0_0_5px_rgba(245,158,11,0.5)]" : 
+                                    "bg-primary shadow-[0_0_5px_rgba(var(--primary),0.5)]"
+                                  )} />
+                                  <span className="text-[10px] font-bold text-foreground/90 truncate leading-none">
                                     {task.title}
                                   </span>
-                                </button>
-                              );
-                            })}
-                            {data && data.all.length > 3 && (
-                              <button
-                                onClick={() => {
-                                  setSelectedFilterDate(dateStr);
-                                  setViewMode("list");
-                                }}
-                                className="w-full text-center py-1 text-[8px] font-black uppercase text-primary/60 hover:text-primary transition-colors"
-                              >
-                                +{data.all.length - 3} mais
+                                </div>
+                                {task.project && (
+                                  <span className="text-[8px] font-bold text-muted-foreground/70 uppercase tracking-wider truncate ml-3">
+                                    {task.project.title}
+                                  </span>
+                                )}
                               </button>
+                            ))}
+                            {data && data.all.length > 3 && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedFilterDate(dateStr); 
+                                    setViewMode("list");
+                                  }}
+                                  className="mt-1 w-full text-center py-1 rounded-lg text-[9px] font-black uppercase tracking-widest text-primary/70 hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20"
+                                >
+                                  + {data.all.length - 3} mais
+                                </button>
                             )}
                           </div>
+                          
+                          {/* Efeito interativo de fundo na célula */}
+                          <div className="absolute inset-0 bg-gradient-to-b from-foreground/[0.02] to-transparent opacity-0 group-hover/cell:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none" />
                         </>
                       )}
                     </div>

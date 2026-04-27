@@ -937,7 +937,7 @@ function TaskCard({
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-black group-hover:scale-110 transition-transform duration-500">
             <span className="text-primary font-black text-3xl tracking-tighter opacity-15 uppercase">
-              Naveo
+              Netuno
             </span>
             <div className="absolute inset-0 bg-primary/5 mix-blend-overlay" />
           </div>
@@ -1839,9 +1839,13 @@ function EditTaskModal({
 export function Projects({
   profile,
   onNavigateToTask,
+  initialSearchTerm,
+  onSearchCleared,
 }: {
   profile?: any;
   onNavigateToTask?: (taskId: string) => void;
+  initialSearchTerm?: string;
+  onSearchCleared?: () => void;
 }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -1944,6 +1948,14 @@ export function Projects({
       resolveTeamAndFetch();
     }
   }, [profile?.id, profile?.admin_id]);
+
+  useEffect(() => {
+    if (initialSearchTerm) {
+      setSearchTerm(initialSearchTerm);
+      // Opcional: limpar o termo no pai para não reaplicar se o usuário sair e voltar à aba
+      onSearchCleared?.();
+    }
+  }, [initialSearchTerm]);
 
   useEffect(() => {
     if (!teamOwnerId) return;
@@ -2107,23 +2119,23 @@ export function Projects({
 
   return (
     <div className="space-y-6 h-full flex flex-col animate-fade-in-up">
-      <div className="flex justify-between items-center bg-transparent mb-6">
-        <div>
-          <h1 className="text-4xl font-black tracking-tighter text-foreground uppercase">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-6">
+        <div className="space-y-1">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tighter text-foreground uppercase leading-none">
             Gestão de Projetos
           </h1>
-          <p className="text-muted-foreground mt-1 font-medium">
+          <p className="text-muted-foreground font-medium text-sm sm:text-base">
             Visualize o progresso e gerencie as demandas da equipe
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-muted/30 p-1.5 rounded-2xl border border-border/40 shadow-inner mr-2">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2 bg-muted/20 p-1 rounded-2xl border border-border/40 shadow-inner">
             <button
               onClick={() => setShowArchived(false)}
               className={cn(
-                "px-4 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all duration-300",
+                "px-3 py-1.5 sm:px-4 sm:py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300",
                 !showArchived
-                  ? "text-primary bg-card border border-primary/20 shadow-md"
+                  ? "text-primary bg-card border border-primary/20 shadow-sm"
                   : "text-muted-foreground/60 hover:text-foreground hover:bg-foreground/5",
               )}
             >
@@ -2132,23 +2144,23 @@ export function Projects({
             <button
               onClick={() => setShowArchived(true)}
               className={cn(
-                "px-4 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all duration-300 flex items-center gap-2",
+                "px-3 py-1.5 sm:px-4 sm:py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 flex items-center gap-2",
                 showArchived
-                  ? "text-amber-500 bg-card border border-amber-500/20 shadow-md"
+                  ? "text-amber-500 bg-card border border-amber-500/20 shadow-sm"
                   : "text-muted-foreground/60 hover:text-foreground hover:bg-foreground/5",
               )}
             >
-              <Archive size={14} /> Arquivados
+              <Archive size={12} className="sm:w-3.5 sm:h-3.5" /> Arquivados
             </button>
           </div>
-          <div className="relative group min-w-[260px]">
+          <div className="relative group flex-1 min-w-[240px] max-w-sm">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
             <input
               type="text"
               placeholder="Buscar projetos..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-card border border-border/50 rounded-2xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all font-medium placeholder:text-muted-foreground/40 shadow-xl"
+              className="w-full bg-card border border-border/50 rounded-2xl py-2.5 sm:py-3 pl-11 pr-4 text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all font-medium placeholder:text-muted-foreground/40 shadow-xl"
             />
           </div>
           <NewTaskModal

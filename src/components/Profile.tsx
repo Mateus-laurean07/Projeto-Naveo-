@@ -249,7 +249,7 @@ export function Profile() {
               Meu Perfil
             </h1>
             <p className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest leading-none mt-1">
-              Gerencie suas informações no Naveo
+              Gerencie suas informações no Netuno
             </p>
           </div>
         </div>
@@ -352,7 +352,7 @@ export function Profile() {
           <div className="bg-card border border-border/50 rounded-[2.5rem] p-10 shadow-sm">
             <h3 className="text-[11px] font-black text-primary uppercase tracking-[0.3em] mb-10 pl-1 border-l-4 border-primary ml-1">Informações Pessoais</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest pl-1">Nome Completo</label>
                 <input
@@ -362,7 +362,7 @@ export function Profile() {
                   onChange={handleChange}
                   disabled={!isEditing}
                   placeholder="Ex: João Silva"
-                  className="w-full bg-background border border-border/50 rounded-2xl p-5 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
+                  className="w-full bg-background border border-border/50 rounded-2xl p-4 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
                 />
               </div>
 
@@ -375,7 +375,7 @@ export function Profile() {
                   onChange={handleChange}
                   disabled={!isEditing}
                   placeholder="Opcional"
-                  className="w-full bg-background border border-border/50 rounded-2xl p-5 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
+                  className="w-full bg-background border border-border/50 rounded-2xl p-4 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
                 />
               </div>
 
@@ -389,7 +389,7 @@ export function Profile() {
                   disabled={!isEditing}
                   placeholder="(11) 99999-9999"
                   maxLength={15}
-                  className="w-full bg-background border border-border/50 rounded-2xl p-5 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
+                  className="w-full bg-background border border-border/50 rounded-2xl p-4 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
                 />
               </div>
 
@@ -403,7 +403,7 @@ export function Profile() {
                   disabled={!isEditing}
                   placeholder="000.000.000-00"
                   maxLength={18}
-                  className="w-full bg-background border border-border/50 rounded-2xl p-5 text-[15px] font-black focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
+                  className="w-full bg-background border border-border/50 rounded-2xl p-4 text-[15px] font-black focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
                 />
               </div>
             </div>
@@ -413,19 +413,19 @@ export function Profile() {
           <div className="bg-card border border-border/50 rounded-[2.5rem] p-10 shadow-sm">
             <h3 className="text-[11px] font-black text-primary uppercase tracking-[0.3em] mb-10 pl-1 border-l-4 border-primary ml-1">Endereço e Faturamento</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-x-8 gap-y-8">
-              <div className="md:col-span-3 lg:col-span-4 space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-x-6 gap-y-6">
+              <div className="md:col-span-9 space-y-2">
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest pl-1">Endereço / Rua</label>
                 <input
                   name="address"
                   value={profile.address}
                   onChange={handleChange}
                   disabled={!isEditing}
-                  className="w-full bg-background border border-border/50 rounded-2xl p-5 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
+                  className="w-full bg-background border border-border/50 rounded-2xl p-4 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
                 />
               </div>
 
-              <div className="md:col-span-1 lg:col-span-2 space-y-2">
+              <div className="md:col-span-3 space-y-2">
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest pl-1">Número</label>
                 <input
                   name="addressNumber"
@@ -433,33 +433,33 @@ export function Profile() {
                   onChange={handleChange}
                   disabled={!isEditing}
                   maxLength={10}
-                  className="w-full bg-background border border-border/50 rounded-2xl p-5 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
+                  className="w-full bg-background border border-border/50 rounded-2xl p-4 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
                 />
               </div>
 
-              <div className="md:col-span-2 lg:col-span-2 space-y-2">
+              <div className="md:col-span-6 space-y-2">
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest pl-1">Bairro</label>
                 <input
                   name="neighborhood"
                   value={profile.neighborhood}
                   onChange={handleChange}
                   disabled={!isEditing}
-                  className="w-full bg-background border border-border/50 rounded-2xl p-5 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
+                  className="w-full bg-background border border-border/50 rounded-2xl p-4 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
                 />
               </div>
 
-              <div className="md:col-span-2 lg:col-span-2 space-y-2">
+              <div className="md:col-span-6 space-y-2">
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest pl-1">Cidade</label>
                 <input
                   name="city"
                   value={profile.city}
                   onChange={handleChange}
                   disabled={!isEditing}
-                  className="w-full bg-background border border-border/50 rounded-2xl p-5 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
+                  className="w-full bg-background border border-border/50 rounded-2xl p-4 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
                 />
               </div>
 
-              <div className="md:col-span-1 lg:col-span-1 space-y-2">
+              <div className="md:col-span-6 space-y-2">
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest pl-1">Estado</label>
                 <input
                   name="state"
@@ -468,11 +468,11 @@ export function Profile() {
                   disabled={!isEditing}
                   placeholder="UF"
                   maxLength={2}
-                  className="w-full bg-background border border-border/50 rounded-2xl p-5 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
+                  className="w-full bg-background border border-border/50 rounded-2xl p-4 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
                 />
               </div>
 
-              <div className="md:col-span-1 lg:col-span-1 space-y-2">
+              <div className="md:col-span-6 space-y-2">
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest pl-1">CEP</label>
                 <input
                   name="zipCode"
@@ -481,7 +481,7 @@ export function Profile() {
                   disabled={!isEditing}
                   placeholder="00000-000"
                   maxLength={9}
-                  className="w-full bg-background border border-border/50 rounded-2xl p-5 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
+                  className="w-full bg-background border border-border/50 rounded-2xl p-4 text-[15px] font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none disabled:opacity-50"
                 />
               </div>
             </div>

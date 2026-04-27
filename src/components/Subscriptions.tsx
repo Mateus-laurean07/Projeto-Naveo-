@@ -11,6 +11,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import { toast } from "sonner";
 import { Checkout } from "./Checkout";
 
 export function Subscriptions({
@@ -23,6 +24,7 @@ export function Subscriptions({
   const [subscription, setSubscription] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isCheckout, setIsCheckout] = useState(false);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
   useEffect(() => {
     async function loadSubscription() {
@@ -37,10 +39,11 @@ export function Subscriptions({
           .from("subscriptions")
           .select("*, plans(*)")
           .eq("user_id", ownerId)
-          .maybeSingle();
+          .order("created_at", { ascending: false })
+          .limit(1);
 
         if (error) throw error;
-        setSubscription(data);
+        setSubscription(data && data.length > 0 ? data[0] : null);
       } catch (e) {
         console.error("Erro ao carregar assinatura:", e);
       } finally {
@@ -48,8 +51,44 @@ export function Subscriptions({
       }
     }
 
-    loadSubscription();
-  }, []);
+    if (!isCheckout) {
+      loadSubscription();
+    }
+  }, [activeProfile, isCheckout]);
+
+  const handleCancelPlan = async () => {
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from("subscriptions")
+        .update({ status: "canceled" })
+        .eq("id", subscription.id);
+        
+      if (error) throw error;
+      
+      // Sincroniza o perfil central com o cancelamento
+      const ownerId = activeProfile?.admin_id || activeProfile?.id;
+      if (ownerId) {
+        await supabase
+          .from("profiles")
+          .update({
+            plan_name: "Cancelado",
+            is_pro: false,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", ownerId);
+      }
+      
+      toast.success("Assinatura cancelada com sucesso.");
+      setSubscription({ ...subscription, status: "canceled" });
+      setIsCancelModalOpen(false);
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Erro ao cancelar a assinatura.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -92,7 +131,7 @@ export function Subscriptions({
             Nenhuma Assinatura Ativa
           </h2>
           <p className="text-muted-foreground max-w-sm mb-10 text-lg font-medium leading-relaxed">
-            Você ainda não possui uma assinatura Naveo ativa. Escolha um plano
+            Você ainda não possui uma assinatura Netuno ativa. Escolha um plano
             para destravar todo o poder do seu CRM.
           </p>
 
@@ -119,8 +158,8 @@ export function Subscriptions({
           </h1>
           <p className="text-sm font-medium text-muted-foreground/80">
             Status:{" "}
-            <span className="text-emerald-500 font-bold">
-              {subscription.status}
+            <span className={`font-bold ${subscription.status === 'canceled' ? 'text-red-500' : 'text-emerald-500'}`}>
+              {subscription.status === 'active' ? 'Ativo' : subscription.status === 'canceled' ? 'Cancelado' : subscription.status}
             </span>
           </p>
         </div>
@@ -166,17 +205,64 @@ export function Subscriptions({
               Precisa de mais recursos?
             </h3>
             <p className="text-sm text-muted-foreground mb-6">
-              Você pode migrar seu plano a qualquer momento.
+              Você pode migrar ou cancelar seu plano a qualquer momento.
             </p>
           </div>
-          <button
-            onClick={() => setIsCheckout(true)}
-            className="w-full py-4 rounded-2xl bg-foreground/5 hover:bg-foreground/10 text-foreground font-black text-xs uppercase tracking-widest transition-all"
-          >
-            Alterar Meu Plano
-          </button>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => setIsCheckout(true)}
+              className="w-full py-4 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-primary/20"
+            >
+              Alterar Meu Plano
+            </button>
+            {subscription.status !== "canceled" && (
+              <button
+                onClick={() => setIsCancelModalOpen(true)}
+                disabled={loading}
+                className="w-full py-4 rounded-2xl border border-border hover:border-red-500/50 hover:bg-red-500/10 text-muted-foreground hover:text-red-500 font-black text-xs uppercase tracking-widest transition-all disabled:opacity-50"
+              >
+                Cancelar Assinatura
+              </button>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Cancel Modal */}
+      {isCancelModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-card border border-border/50 rounded-[2rem] p-8 max-w-md w-full shadow-2xl relative">
+            <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mb-6 border border-red-500/20">
+              <AlertCircle className="w-8 h-8" />
+            </div>
+            
+            <h2 className="text-2xl font-black text-foreground mb-2">
+              Cancelar Assinatura?
+            </h2>
+            <p className="text-muted-foreground text-sm font-medium mb-8">
+              Tem certeza de que deseja cancelar? O seu acesso aos recursos premium continuará até o final do ciclo atual, mas a renovação será desativada.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => setIsCancelModalOpen(false)}
+                className="flex-1 py-4 px-6 rounded-2xl border border-border hover:bg-muted text-foreground font-black text-xs uppercase tracking-widest transition-all"
+                disabled={loading}
+              >
+                Voltar
+              </button>
+              <button
+                onClick={handleCancelPlan}
+                disabled={loading}
+                className="flex-1 py-4 px-6 rounded-2xl bg-red-500 hover:bg-red-600 text-white font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-red-500/20 flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

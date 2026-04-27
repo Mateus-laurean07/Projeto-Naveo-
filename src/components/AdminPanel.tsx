@@ -22,6 +22,7 @@ import {
   User,
   LayoutDashboard,
   Briefcase,
+  CreditCard,
 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { cn } from "../lib/utils";
@@ -52,10 +53,14 @@ export function AdminPanel({ profile }: { profile: any }) {
   >({});
   const onlineIds = Object.keys(onlineUsersMetadata);
   const [expandedUsers, setExpandedUsers] = useState<string[]>([]);
+  const [subscriptions, setSubscriptions] = useState<any[]>([]);
+  const [dbPlans, setDbPlans] = useState<any[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"info" | "team">("info");
+  const [activeTab, setActiveTab] = useState<"info" | "team" | "subscription">(
+    "info",
+  );
 
   const [stats, setStats] = useState({
     total: 0,
@@ -119,19 +124,71 @@ export function AdminPanel({ profile }: { profile: any }) {
     if (showToast && !isManualSync) setLoading(false);
   };
 
+  const fetchSubscriptions = async () => {
+    const { data, error } = await supabase
+      .from("subscriptions")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Erro ao buscar assinaturas:", error);
+      return;
+    }
+
+    if (data) {
+      setSubscriptions(data);
+    }
+  };
+
+  const fetchPlans = async () => {
+    const { data, error } = await supabase
+      .from("plans")
+      .select("*")
+      .order("sequence", { ascending: true });
+    
+    if (!error && data) {
+      setDbPlans(data);
+    }
+  };
+
   const handleManualSync = async () => {
     setIsRefreshing(true);
-    setCurrentTime(new Date()); // Sincroniza o relógio interno imediatamente
-    await fetchProfiles(true, true);
+    setCurrentTime(new Date());
+    // Garante que buscamos dados frescos do banco
+    const results = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("*")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("subscriptions")
+        .select("*")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("plans")
+        .select("*")
+        .order("sequence", { ascending: true }),
+    ]);
+
+    const [profilesRes, subsRes, plansRes] = results;
+
+    if (profilesRes.data) setProfiles(profilesRes.data);
+    if (subsRes.data) setSubscriptions(subsRes.data);
+    if (plansRes.data) setDbPlans(plansRes.data);
+
+    setIsRefreshing(false);
+    toast.success("Sincronização completa!");
   };
 
   useEffect(() => {
     if (!profile?.id) return;
 
-    fetchProfiles();
+    fetchProfiles(false);
+    fetchSubscriptions();
+    fetchPlans();
 
     // 1. Presença em tempo real — usa o mesmo canal do Application.tsx
-    const presenceChannel = supabase.channel("naveo-presence", {
+    const presenceChannel = supabase.channel("netuno-presence", {
       config: { presence: { key: profile.id } },
     });
 
@@ -202,6 +259,7 @@ export function AdminPanel({ profile }: { profile: any }) {
         // Ao conectar o Realtime, recarrega para pegar alterações recentes
         if (status === "SUBSCRIBED") {
           fetchProfiles();
+          fetchSubscriptions();
         }
       });
 
@@ -223,12 +281,31 @@ export function AdminPanel({ profile }: { profile: any }) {
       })
       .subscribe();
 
-    // 4. Timer para atualizar o display do relógio a cada segundo
+    // 4. Realtime Subscriptions e Plans: atualiza a tabela master instantaneamente
+    const subscriptionsChannel = supabase
+      .channel("subscriptions-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "subscriptions" },
+        () => {
+          fetchSubscriptions();
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "plans" },
+        () => {
+          fetchPlans();
+        },
+      )
+      .subscribe();
+
+    // 5. Timer para atualizar o display do relógio a cada segundo
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
 
-    // 5. Fallback Background Check - Verifica silenciosamente de 15 em 15s p/ caso falhe o socket
+    // 6. Fallback Background Check - Verifica silenciosamente de 15 em 15s p/ caso falhe o socket
     const fallbackTimer = setInterval(() => {
       supabase
         .from("profiles")
@@ -237,12 +314,15 @@ export function AdminPanel({ profile }: { profile: any }) {
         .then(({ data }) => {
           if (data) setProfiles(data);
         });
+      fetchSubscriptions();
+      fetchPlans();
     }, 15000);
 
     return () => {
       supabase.removeChannel(presenceChannel);
       supabase.removeChannel(profilesChannel);
       supabase.removeChannel(notifChannel);
+      supabase.removeChannel(subscriptionsChannel);
       clearInterval(timer);
       clearInterval(fallbackTimer);
     };
@@ -289,26 +369,138 @@ export function AdminPanel({ profile }: { profile: any }) {
     }
   };
 
-  const updateJobTitle = async (userId: string, newJob: string) => {
+  const updateUserPlan = async (
+    userId: string,
+    newPlan: string,
+    p: Profile,
+  ) => {
+    try {
+      // O ID alvo é o admin da equipe ou o próprio usuário (dono da conta)
+      const targetId = p.admin_id || p.id;
+      
+      const isRemoving = newPlan === "Cancelado" || newPlan === "Sem Plano";
+      const isPro = !isRemoving;
+
+      // 1. Atualiza o perfil central
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          plan_name: newPlan,
+          is_pro: isPro,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", targetId);
+
+      if (profileError) {
+        console.error("Erro Profile:", profileError);
+        toast.error("Erro ao atualizar o plano no perfil do usuário.");
+        return;
+      }
+
+      // 2. Mapear o ID do plano para o UUID real do banco (tabela plans)
+      const planRecord = dbPlans.find((p) => p.name === newPlan);
+      const planUuid = planRecord ? planRecord.id : null;
+
+      // 3. Procura a assinatura existente
+      const { data: existingSubs } = await supabase
+        .from("subscriptions")
+        .select("id")
+        .eq("user_id", targetId)
+        .limit(1);
+
+      if (existingSubs && existingSubs.length > 0) {
+        // Atualiza assinatura existente
+        const { error: subError } = await supabase
+          .from("subscriptions")
+          .update({ 
+            status: isRemoving ? "canceled" : "active",
+            plan_id: planUuid,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", existingSubs[0].id);
+
+        if (subError) console.error("Erro Sub Update:", subError);
+      } else if (!isRemoving) {
+        // Cria nova assinatura se for um plano ativo e não existir
+        const { error: subInsertError } = await supabase
+          .from("subscriptions")
+          .insert({
+            user_id: targetId,
+            plan_id: planUuid,
+            status: "active",
+            renewal_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          });
+        
+        if (subInsertError) console.error("Erro Sub Insert:", subInsertError);
+      }
+
+      // 4. Enviar Notificação para o Usuário
+      if (!isRemoving) {
+        // Busca o user_id do auth para a notificação (precisa ser o UUID do auth)
+        const targetProfile = profiles.find(pr => pr.id === targetId);
+        if (targetProfile && (targetProfile as any).user_id) {
+          await supabase.from("sys_notifications").insert({
+            user_id: (targetProfile as any).user_id,
+            type: "system",
+            title: "🎉 Plano Atualizado!",
+            message: `O administrador concedeu a você o plano ${newPlan}. Aproveite todos os recursos!`,
+            target_tab: "profile",
+            read: false
+          });
+        }
+      }
+
+      toast.success(`Plano atualizado para ${newPlan} com sucesso!`);
+      
+      // 5. Atualiza a interface local imediatamente
+      setProfiles((prev) =>
+        prev.map((profileItem) =>
+          profileItem.id === targetId
+            ? { ...profileItem, plan_name: newPlan, is_pro: isPro }
+            : profileItem,
+        ),
+      );
+      
+      // Sincroniza com o banco para garantir
+      fetchProfiles(false);
+      fetchSubscriptions();
+      
+    } catch (e: any) {
+      toast.error(`Erro ao atualizar plano: ${e.message}`);
+    }
+  };
+
+  const updateProfileField = async (
+    userId: string,
+    field: string,
+    value: string,
+  ) => {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ job_title: newJob })
+        .update({ [field]: value })
         .eq("id", userId);
 
       if (error) {
-        toast.error(`Erro ao atualizar cargo: ${error.message}`);
-        console.error("Erro Supabase Job Title:", error);
+        toast.error(`Erro ao atualizar ${field}: ${error.message}`);
       } else {
-        toast.success("Cargo salvo!");
+        toast.success("Alteração salva!");
         setProfiles((prev) =>
-          prev.map((p) => (p.id === userId ? { ...p, job_title: newJob } : p)),
+          prev.map((p) => (p.id === userId ? { ...p, [field]: value } : p)),
         );
+        if (selectedProfile?.id === userId) {
+          setSelectedProfile((prev) =>
+            prev ? { ...prev, [field]: value } : null,
+          );
+        }
       }
     } catch (e: any) {
-      toast.error(`Erro ao salvar cargo: ${e.message || "Erro de conexão"}`);
+      toast.error(`Erro ao salvar: ${e.message}`);
     }
   };
+
+  const updateJobTitle = (userId: string, newJob: string) =>
+    updateProfileField(userId, "job_title", newJob);
 
   const deleteUser = async () => {
     if (!userToDelete) return;
@@ -434,6 +626,53 @@ export function AdminPanel({ profile }: { profile: any }) {
       return diffDays <= 7;
     })();
 
+    const sub = subscriptions.find((s) => {
+      const subUserId = String(s.user_id).trim().toLowerCase();
+      const targetId = String(p.admin_id || p.id)
+        .trim()
+        .toLowerCase();
+      return subUserId === targetId;
+    });
+
+    const planName = (() => {
+      if (p.role === "super_admin") return "Master";
+
+      let currentPlan = (p as any).plan_name || "Sem Plano";
+
+      // Se for subusuário, herda o plano do admin criador
+      if (
+        (currentPlan === "Sem Plano" || currentPlan === "Grátis") &&
+        p.admin_id &&
+        p.admin_id !== p.id
+      ) {
+        const parent = profiles.find((pr) => pr.id === p.admin_id);
+        if (
+          parent &&
+          (parent as any).plan_name &&
+          (parent as any).plan_name !== "Grátis"
+        ) {
+          currentPlan = (parent as any).plan_name;
+        }
+      }
+
+      // Prioridade para o plano no perfil se ele foi definido manualmente como um plano pago ou Grátis
+      // Mas se houver uma assinatura ativa no Stripe, ela pode ser o status real
+      if (sub) {
+        const status = sub.status?.toLowerCase();
+        if (status === "canceled" && currentPlan === "Sem Plano")
+          return "Cancelado";
+        if (status === "past_due" || status === "unpaid") return "Inadimplente";
+        if (status === "trial" || status === "trialing") return "Teste";
+      }
+
+      const lower = currentPlan.toLowerCase();
+      if (lower.includes("cancelado")) return "Cancelado";
+      if (lower.includes("teste") || lower.includes("trial")) return "Teste";
+      if (lower.includes("grátis") || lower.includes("gratis")) return "Sem Plano";
+
+      return currentPlan;
+    })();
+
     return (
       <React.Fragment key={p.id}>
         <tr
@@ -442,7 +681,7 @@ export function AdminPanel({ profile }: { profile: any }) {
             setActiveTab("info");
           }}
           className={cn(
-            "group transition-colors cursor-pointer",
+            "group transition-colors duration-200 cursor-pointer",
             isNewUser
               ? "bg-amber-500/10 hover:bg-amber-500/15 shadow-[inset_4px_0_0_rgba(245,158,11,1)]"
               : "hover:bg-foreground/[0.02] hover:bg-accent/5",
@@ -450,7 +689,7 @@ export function AdminPanel({ profile }: { profile: any }) {
           )}
         >
           <td className="py-4 px-6">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 min-w-[240px]">
               <div className="relative">
                 <div className="w-12 h-12 rounded-2xl overflow-hidden bg-accent/20 flex items-center justify-center border border-border/50 shadow-sm">
                   {p.avatar_url ? (
@@ -485,7 +724,7 @@ export function AdminPanel({ profile }: { profile: any }) {
           </td>
 
           <td className="py-4 px-6">
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1 min-w-[200px]">
               <span className="text-xs text-muted-foreground flex items-center gap-1">
                 <Building2 className="w-3 h-3" /> {p.company_name || "N/A"}
               </span>
@@ -497,7 +736,7 @@ export function AdminPanel({ profile }: { profile: any }) {
 
           <td className="py-4 px-6">
             <div className="flex flex-col gap-2">
-              <div className="relative group/cargo max-w-[140px]">
+              <div className="relative group/cargo min-w-[160px]">
                 <Briefcase className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground group-focus-within/cargo:text-primary" />
                 <input
                   type="text"
@@ -528,6 +767,67 @@ export function AdminPanel({ profile }: { profile: any }) {
                   )}
                 />
               </div>
+            </div>
+          </td>
+          <td className="py-4 px-6">
+            <div className="relative group/plan min-w-[180px]">
+              <div
+                className={cn(
+                  "absolute left-3 top-1/2 -translate-y-1/2 z-10 transition-colors pointer-events-none",
+                  planName === "Cancelado"
+                    ? "text-red-500"
+                    : planName === "Master"
+                      ? "text-amber-500"
+                      : planName === "Teste"
+                        ? "text-blue-500"
+                        : "text-primary",
+                )}
+              >
+                <CreditCard size={12} />
+              </div>
+              <select
+                value={
+                  planName === "Master"
+                    ? "Master"
+                    : planName === "Sem Plano"
+                      ? ""
+                      : planName
+                }
+                disabled={
+                  profile?.role !== "super_admin" && profile?.role !== "admin"
+                }
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => updateUserPlan(p.id, e.target.value, p)}
+                className={cn(
+                  "w-full appearance-none bg-background border rounded-xl pl-7 pr-4 py-2 text-[10px] focus:outline-none font-black uppercase tracking-wider transition-colors duration-200 cursor-pointer",
+                  profile?.role !== "super_admin" &&
+                    profile?.role !== "admin" &&
+                    "opacity-70 cursor-not-allowed",
+                  planName === "Cancelado"
+                    ? "bg-red-500/10 border-red-500/30 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.1)]"
+                    : planName === "Master"
+                      ? "bg-amber-500/10 border-amber-500/30 text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.1)]"
+                      : planName === "Teste"
+                        ? "bg-blue-500/10 border-blue-500/30 text-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.1)]"
+                        : planName === "Sem Plano" || !planName
+                          ? "bg-muted/10 border-border/50 text-muted-foreground hover:border-primary/50"
+                          : "bg-primary/10 border-primary/30 text-primary shadow-[0_0_15px_rgba(26,126,251,0.1)]",
+                )}
+              >
+                <option value="" disabled>
+                  Sem Plano
+                </option>
+                <option value="Cancelado">Cancelado</option>
+                {dbPlans.map((plan) => (
+                  <option key={plan.id} value={plan.name}>
+                    {plan.name}
+                  </option>
+                ))}
+                {planName === "Master" && (
+                  <option value="Master">Master</option>
+                )}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none transition-transform group-hover/plan:translate-y-[-40%]" />
             </div>
           </td>
           <td className="py-4 px-6">
@@ -570,8 +870,8 @@ export function AdminPanel({ profile }: { profile: any }) {
           </td>
 
           <td className="py-4 px-6 text-right">
-            <div className="flex items-center justify-end gap-2">
-              <div className="flex flex-col gap-1.5 min-w-[150px]">
+            <div className="flex items-center justify-end gap-2 min-w-[220px]">
+              <div className="flex flex-col gap-1.5 min-w-[160px]">
                 <div className="relative group/select">
                   <Shield
                     className={cn(
@@ -592,7 +892,7 @@ export function AdminPanel({ profile }: { profile: any }) {
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => updateUserRole(p.id, e.target.value)}
                     className={cn(
-                      "w-full appearance-none bg-background border rounded-2xl pl-8 pr-8 py-2.5 text-[10px] focus:outline-none font-black uppercase tracking-widest transition-all cursor-pointer hover:border-primary/50",
+                      "w-full appearance-none bg-background border rounded-xl pl-7 pr-7 py-2.5 text-[10px] focus:outline-none font-black uppercase tracking-wider transition-all cursor-pointer hover:border-primary/50",
                       profile?.role !== "super_admin" &&
                         profile?.role !== "admin" &&
                         "opacity-50 cursor-not-allowed",
@@ -677,7 +977,7 @@ export function AdminPanel({ profile }: { profile: any }) {
           </h1>
           <p className="text-muted-foreground mt-1 font-medium italic">
             Monitoramento de usuários em tempo real •{" "}
-            <span className="text-accent">NAVEO INFRA</span>
+            <span className="text-accent">NETUNO INFRA</span>
           </p>
         </div>
         <div className="flex gap-3">
@@ -781,19 +1081,22 @@ export function AdminPanel({ profile }: { profile: any }) {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-muted/30 border-b border-border/50">
-                <th className="py-5 px-8 text-[11px] font-black uppercase text-muted-foreground tracking-widest">
+                <th className="py-5 px-6 text-[11px] font-black uppercase text-muted-foreground tracking-widest min-w-[240px]">
                   Usuário / Sistema
                 </th>
-                <th className="py-5 px-6 text-[11px] font-black uppercase text-muted-foreground tracking-widest">
+                <th className="py-5 px-4 text-[11px] font-black uppercase text-muted-foreground tracking-widest min-w-[200px]">
                   Empresa & Contato
                 </th>
-                <th className="py-5 px-6 text-[11px] font-black uppercase text-muted-foreground tracking-widest">
-                  Cargo / Status
+                <th className="py-5 px-4 text-[11px] font-black uppercase text-muted-foreground tracking-widest min-w-[160px]">
+                  Cargo
                 </th>
-                <th className="py-5 px-6 text-[11px] font-black uppercase text-muted-foreground tracking-widest">
-                  Último Acesso
+                <th className="py-5 px-4 text-[11px] font-black uppercase text-muted-foreground tracking-widest min-w-[180px]">
+                  Plano
                 </th>
-                <th className="py-5 px-8 text-[11px] font-black uppercase text-muted-foreground tracking-widest text-right">
+                <th className="py-5 px-4 text-[11px] font-black uppercase text-muted-foreground tracking-widest min-w-[150px]">
+                  Status / Acesso
+                </th>
+                <th className="py-5 px-6 text-[11px] font-black uppercase text-muted-foreground tracking-widest text-right min-w-[220px]">
                   Ações de Controle
                 </th>
               </tr>
@@ -804,7 +1107,7 @@ export function AdminPanel({ profile }: { profile: any }) {
                     .fill(0)
                     .map((_, i) => (
                       <tr key={i} className="animate-pulse">
-                        <td colSpan={5} className="py-12 px-8">
+                        <td colSpan={6} className="py-12 px-8">
                           <div className="h-12 bg-muted/20 rounded-2xl w-full" />
                         </td>
                       </tr>
@@ -813,7 +1116,7 @@ export function AdminPanel({ profile }: { profile: any }) {
 
               {!loading && filteredProfiles.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-20 text-center">
+                  <td colSpan={6} className="py-20 text-center">
                     <div className="flex flex-col items-center gap-4 opacity-30">
                       <Search className="w-16 h-16" />
                       <p className="text-xl font-bold uppercase tracking-widest">
@@ -851,9 +1154,19 @@ export function AdminPanel({ profile }: { profile: any }) {
                       )}
                     </div>
                     <div>
-                      <Dialog.Title className="text-2xl font-black text-foreground uppercase tracking-tight">
-                        {selectedProfile.full_name}
-                      </Dialog.Title>
+                      <input
+                        type="text"
+                        defaultValue={selectedProfile.full_name || ""}
+                        onBlur={(e) =>
+                          updateProfileField(
+                            selectedProfile.id,
+                            "full_name",
+                            e.target.value,
+                          )
+                        }
+                        className="text-2xl font-black text-foreground bg-transparent border-none focus:outline-none focus:ring-0 placeholder:opacity-30 uppercase tracking-tighter w-full p-0"
+                        placeholder="Nome do Usuário"
+                      />
                       <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest flex items-center gap-2">
                         <span
                           className={cn(
@@ -900,11 +1213,23 @@ export function AdminPanel({ profile }: { profile: any }) {
                       <Users className="w-4 h-4" />
                       Equipes
                     </button>
+                    <button
+                      onClick={() => setActiveTab("subscription")}
+                      className={cn(
+                        "flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2",
+                        activeTab === "subscription"
+                          ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                          : "text-muted-foreground hover:bg-foreground/5",
+                      )}
+                    >
+                      <CreditCard className="w-4 h-4" />
+                      Assinatura
+                    </button>
                   </div>
                 </div>
 
                 <div className="p-8 overflow-y-auto custom-scrollbar flex-1">
-                  {activeTab === "info" ? (
+                  {activeTab === "info" && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="space-y-6">
                         <div className="space-y-1">
@@ -922,11 +1247,21 @@ export function AdminPanel({ profile }: { profile: any }) {
                           <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                             Telefone / WhatsApp
                           </label>
-                          <div className="flex items-center gap-3 p-4 bg-muted/10 border border-border/50 rounded-2xl group hover:border-primary/30 transition-colors">
+                          <div className="flex items-center gap-3 p-4 bg-muted/10 border border-border/50 rounded-2xl group focus-within:border-primary/50 transition-colors">
                             <Phone className="w-4 h-4 text-primary" />
-                            <span className="text-sm font-bold text-foreground">
-                              {selectedProfile.phone || "---"}
-                            </span>
+                            <input
+                              type="text"
+                              defaultValue={selectedProfile.phone || ""}
+                              onBlur={(e) =>
+                                updateProfileField(
+                                  selectedProfile.id,
+                                  "phone",
+                                  e.target.value,
+                                )
+                              }
+                              placeholder="Nenhum telefone"
+                              className="text-sm font-bold text-foreground bg-transparent w-full focus:outline-none"
+                            />
                           </div>
                         </div>
                         <div className="space-y-1">
@@ -1023,7 +1358,9 @@ export function AdminPanel({ profile }: { profile: any }) {
                         </div>
                       </div>
                     </div>
-                  ) : (
+                  )}
+
+                  {activeTab === "team" && (
                     <div className="space-y-4">
                       <div className="flex items-center justify-between mb-4">
                         <h4 className="text-sm font-black uppercase tracking-widest text-muted-foreground">
@@ -1086,11 +1423,6 @@ export function AdminPanel({ profile }: { profile: any }) {
                                   <div className="flex flex-col">
                                     <span className="text-sm font-bold text-foreground leading-tight">
                                       {member.full_name || "Sem Nome"}
-                                      {member.id === profile?.id && (
-                                        <span className="ml-2 text-[8px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full uppercase">
-                                          Você
-                                        </span>
-                                      )}
                                     </span>
                                     <div className="flex items-center gap-2">
                                       <span
@@ -1107,13 +1439,6 @@ export function AdminPanel({ profile }: { profile: any }) {
                                           : "Inativo"}
                                       </span>
                                     </div>
-                                    <span className="text-[10px] text-muted-foreground font-medium">
-                                      {member.email && member.email !== "---"
-                                        ? member.email
-                                        : member.id === profile?.id
-                                          ? profile?.email
-                                          : "---"}
-                                    </span>
                                   </div>
                                 </div>
                                 <div className="flex flex-col items-end gap-1">
@@ -1122,11 +1447,6 @@ export function AdminPanel({ profile }: { profile: any }) {
                                       ? "SUPER ADM"
                                       : (member.role || "user").toUpperCase()}
                                   </span>
-                                  {member.id === selectedProfile.admin_id && (
-                                    <span className="text-[8px] font-bold text-accent uppercase tracking-tighter">
-                                      Gestor
-                                    </span>
-                                  )}
                                 </div>
                               </div>
                             ))
@@ -1139,6 +1459,16 @@ export function AdminPanel({ profile }: { profile: any }) {
                           </div>
                         )}
                       </div>
+                    </div>
+                  )}
+
+                  {activeTab === "subscription" && (
+                    <div className="space-y-6">
+                      <UserSubscriptionView
+                        userId={selectedProfile.id}
+                        profiles={profiles}
+                        onUpdate={fetchSubscriptions}
+                      />
                     </div>
                   )}
                 </div>
@@ -1197,6 +1527,190 @@ export function AdminPanel({ profile }: { profile: any }) {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+    </div>
+  );
+}
+
+function UserSubscriptionView({
+  userId,
+  profiles,
+  onUpdate,
+}: {
+  userId: string;
+  profiles: Profile[];
+  onUpdate?: () => void;
+}) {
+  const [subscription, setSubscription] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Encontra o perfil do usuário para saber se ele tem um admin_id
+  const userProfile = profiles.find((p) => p.id === userId);
+  const ownerId = userProfile?.admin_id || userId;
+  const isInherited = !!userProfile?.admin_id;
+  const ownerProfile = isInherited
+    ? profiles.find((p) => p.id === userProfile.admin_id)
+    : null;
+
+  useEffect(() => {
+    fetchSubscription();
+  }, [userId, ownerId]);
+
+  const fetchSubscription = async () => {
+    setLoading(true);
+    // Busca a assinatura mais recente (independente de status) para mostrar histórico
+    const { data, error } = await supabase
+      .from("subscriptions")
+      .select("*")
+      .eq("user_id", ownerId)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (error) {
+      console.error("Erro ao buscar assinatura individual:", error);
+    }
+
+    if (data && data.length > 0) {
+      setSubscription(data[0]);
+    } else {
+      setSubscription(null);
+    }
+    setLoading(false);
+  };
+
+  const handleCancel = async () => {
+    if (!subscription) return;
+    const confirmMsg = isInherited
+      ? `Este usuário herda o plano de ${ownerProfile?.full_name || "seu administrador"}. Deseja cancelar a assinatura do DONO da equipe? Isso afetará todos os membros.`
+      : "Tem certeza que deseja cancelar o plano deste usuário?";
+
+    if (!confirm(confirmMsg)) return;
+
+    setLoading(true);
+    const { error } = await supabase
+      .from("subscriptions")
+      .update({ status: "canceled" })
+      .eq("id", subscription.id);
+
+    if (!error) {
+      // Sincroniza o perfil também para garantir visibilidade imediata
+      await supabase
+        .from("profiles")
+        .update({
+          plan_name: "Cancelado",
+          is_pro: false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", ownerId);
+    }
+
+    if (error) {
+      toast.error("Erro ao cancelar plano");
+    } else {
+      toast.success("Plano cancelado com sucesso!");
+      fetchSubscription();
+      if (onUpdate) onUpdate();
+    }
+    setLoading(false);
+  };
+
+  if (loading)
+    return (
+      <div className="py-12 flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+          Buscando assinatura...
+        </span>
+      </div>
+    );
+
+  if (!subscription) {
+    return (
+      <div className="py-16 text-center border-2 border-dashed border-border/30 rounded-[2.5rem] bg-muted/5">
+        <div className="w-16 h-16 bg-muted/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <CreditCard className="w-8 h-8 text-muted-foreground/50" />
+        </div>
+        <p className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground/60">
+          Sem assinatura ativa
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <div className="p-8 bg-gradient-to-br from-card to-muted/20 border border-border/50 rounded-[2.5rem] shadow-xl relative overflow-hidden">
+        {isInherited && (
+          <div className="absolute top-0 left-0 right-0 bg-primary/10 py-2 px-4 border-b border-primary/20">
+            <p className="text-[8px] font-black uppercase tracking-widest text-primary text-center">
+              Assinatura herdada de:{" "}
+              {ownerProfile?.full_name ||
+                ownerProfile?.email ||
+                "Administrador"}
+            </p>
+          </div>
+        )}
+
+        <div
+          className={`flex justify-between items-start ${isInherited ? "mt-6" : ""} mb-8`}
+        >
+          <div>
+            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2">
+              Plano Atual
+            </h4>
+            <div className="flex items-center gap-3">
+              <p className="text-3xl font-black text-foreground uppercase tracking-tight italic">
+                {subscription.plans?.name || "Personalizado"}
+              </p>
+              <div
+                className={cn(
+                  "px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg",
+                  subscription.status === "active"
+                    ? "bg-emerald-500 text-white shadow-emerald-500/20"
+                    : "bg-red-500 text-white shadow-red-500/20",
+                )}
+              >
+                {subscription.status === "active"
+                  ? "Ativo"
+                  : subscription.status.toUpperCase()}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-8">
+          <div className="space-y-1">
+            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+              Valor Mensal
+            </h4>
+            <p className="text-xl font-black text-foreground">
+              R$ {subscription.plans?.price || "0,00"}
+            </p>
+          </div>
+          <div className="space-y-1">
+            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+              Próxima Renovação
+            </h4>
+            <p className="text-xl font-black text-foreground">
+              {subscription.renewal_date
+                ? new Date(subscription.renewal_date).toLocaleDateString(
+                    "pt-BR",
+                  )
+                : "---"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {subscription.status === "active" && (
+        <button
+          onClick={handleCancel}
+          disabled={loading}
+          className="w-full py-5 rounded-[1.5rem] bg-red-500 hover:bg-red-600 text-white font-black text-xs uppercase tracking-[0.2em] transition-all shadow-[0_10px_30px_-10px_rgba(239,68,68,0.5)] active:scale-[0.98] flex items-center justify-center gap-3"
+        >
+          <Trash2 className="w-4 h-4" />
+          Cancelar Assinatura do Usuário
+        </button>
+      )}
     </div>
   );
 }

@@ -37,7 +37,9 @@ export function LoadingScreen() {
         <div
           className={cn(
             "relative animate-bounce-slow flex items-center justify-center rounded-[4.5rem] shadow-2xl overflow-hidden",
-            theme === "dark" ? "bg-primary shadow-primary/20" : "bg-[#1a7efb] shadow-blue-500/20"
+            theme === "dark"
+              ? "bg-primary shadow-primary/20"
+              : "bg-[#1a7efb] shadow-blue-500/20",
           )}
           style={{ width: 256, height: 256 }}
         >
@@ -46,28 +48,44 @@ export function LoadingScreen() {
 
         <div className="flex flex-col items-center gap-4">
           <div className="flex flex-col items-center">
-            <h3 className={cn(
-              "text-3xl font-black uppercase tracking-[1em] mb-2 translate-x-[0.5em]",
-              theme === "dark"
-                ? "text-primary drop-shadow-[0_0_20px_hsl(var(--primary)/0.4)]"
-                : "text-[#1a7efb] drop-shadow-[0_0_20px_rgba(26,126,251,0.4)]"
-            )}>
-              Naveo
+            <h3
+              className={cn(
+                "text-3xl font-black uppercase tracking-[1em] mb-2 translate-x-[0.5em]",
+                theme === "dark"
+                  ? "text-primary drop-shadow-[0_0_20px_hsl(var(--primary)/0.4)]"
+                  : "text-[#1a7efb] drop-shadow-[0_0_20px_rgba(26,126,251,0.4)]",
+              )}
+            >
+              Netuno
             </h3>
-            <div className={cn(
-              "h-[1px] w-64 bg-gradient-to-r from-transparent to-transparent",
-              theme === "dark" ? "via-primary/50" : "via-[#1a7efb]/50"
-            )} />
+            <div
+              className={cn(
+                "h-[1px] w-64 bg-gradient-to-r from-transparent to-transparent",
+                theme === "dark" ? "via-primary/50" : "via-[#1a7efb]/50",
+              )}
+            />
           </div>
           <div className="flex items-center gap-3">
-            <span className={cn("w-1.5 h-1.5 rounded-full animate-ping", theme === "dark" ? "bg-primary" : "bg-[#1a7efb]")} />
-            <p className={cn(
-              "text-[10px] font-bold uppercase tracking-[0.8em]",
-              theme === "dark" ? "text-primary/60" : "text-[#1a7efb]/60"
-            )}>
+            <span
+              className={cn(
+                "w-1.5 h-1.5 rounded-full animate-ping",
+                theme === "dark" ? "bg-primary" : "bg-[#1a7efb]",
+              )}
+            />
+            <p
+              className={cn(
+                "text-[10px] font-bold uppercase tracking-[0.8em]",
+                theme === "dark" ? "text-primary/60" : "text-[#1a7efb]/60",
+              )}
+            >
               Despertando a Inteligência
             </p>
-            <span className={cn("w-1.5 h-1.5 rounded-full animate-ping delay-300", theme === "dark" ? "bg-primary" : "bg-[#1a7efb]")} />
+            <span
+              className={cn(
+                "w-1.5 h-1.5 rounded-full animate-ping delay-300",
+                theme === "dark" ? "bg-primary" : "bg-[#1a7efb]",
+              )}
+            />
           </div>
         </div>
       </div>
